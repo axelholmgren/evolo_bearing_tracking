@@ -27,6 +27,8 @@ from z1_pro_msgs.msg import Gcudata
 
 from evolo_gimbal_calibration.gimbal_yaw_correction import correct_yaw
 
+from .bearing_math import rotate_bearing_xy
+
 WORLD_FRAME = "evolo/odom"
 CAMERA_FRAME = (
     "evolo/z1_camera_link"  # /yolo/tracking's own frame_id is not in the tf tree
@@ -164,12 +166,10 @@ class BearingRayIdsNode(Node):
             )
             bearing = do_transform_vector3(forward, transform).vector
             if correction_active:
-                correction_rad = math.radians(self.yaw_correction_deg)
-                cos_correction = math.cos(correction_rad)
-                sin_correction = math.sin(correction_rad)
-                bearing.x, bearing.y = (
-                    cos_correction * bearing.x - sin_correction * bearing.y,
-                    sin_correction * bearing.x + cos_correction * bearing.y,
+                bearing.x, bearing.y = rotate_bearing_xy(
+                    bearing.x,
+                    bearing.y,
+                    self.yaw_correction_deg,
                 )
 
             end_point = Point(

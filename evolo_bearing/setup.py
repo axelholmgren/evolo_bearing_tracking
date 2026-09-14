@@ -24,6 +24,7 @@ setup(
     maintainer_email="axelholmgren@users.noreply.github.com",
     description="Calibrated gimbal yaw correction and bearing-ray visualisation for Evolo.",
     license="Apache-2.0",
+    tests_require=["pytest"],
     entry_points={
         "console_scripts": [
             "bearing_marker_ids_node = evolo_bearing.bearing_marker_ids_node:main",

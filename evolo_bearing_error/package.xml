@@ -11,5 +11,6 @@
   <exec_depend>visualization_msgs</exec_depend>
   <exec_depend>z1_pro_msgs</exec_depend>
   <exec_depend>evolo_gimbal_calibration</exec_depend>
+  <test_depend>python3-pytest</test_depend>
   <export><build_type>ament_python</build_type></export>
 </package>

@@ -1,5 +1,3 @@
-import numpy as np
-import math
 import rclpy
 from geometry_msgs.msg import (
     Point,
@@ -20,6 +18,8 @@ from visualization_msgs.msg import Marker
 from z1_pro_msgs.msg import Gcudata
 
 from evolo_gimbal_calibration.gimbal_yaw_correction import correct_yaw
+
+from .bearing_math import rotate_bearing_xy
 
 # WORLD_FRAME = "evolo/map"
 WORLD_FRAME = "evolo/odom"
@@ -121,23 +121,21 @@ class BearingRayNode(Node):
         target_frame_direction = do_transform_vector3(forward, offset_transform)
         bearing_vector = do_transform_vector3(target_frame_direction, transform)
 
-        bearing = np.array(
-            [bearing_vector.vector.x, bearing_vector.vector.y, bearing_vector.vector.z]
-        )
+        bearing_x = bearing_vector.vector.x
+        bearing_y = bearing_vector.vector.y
+        bearing_z = bearing_vector.vector.z
         if correction_active:
-            correction_rad = math.radians(self.yaw_correction_deg)
-            cos_correction = math.cos(correction_rad)
-            sin_correction = math.sin(correction_rad)
-            bearing[:2] = (
-                cos_correction * bearing[0] - sin_correction * bearing[1],
-                sin_correction * bearing[0] + cos_correction * bearing[1],
+            bearing_x, bearing_y = rotate_bearing_xy(
+                bearing_x,
+                bearing_y,
+                self.yaw_correction_deg,
             )
 
         end_point = Point(
-            x=origin.x + bearing[0] * RAY_LENGTH,
-            y=origin.y + bearing[1] * RAY_LENGTH,
+            x=origin.x + bearing_x * RAY_LENGTH,
+            y=origin.y + bearing_y * RAY_LENGTH,
             # z=0,
-            z=origin.z + bearing[2] * RAY_LENGTH,
+            z=origin.z + bearing_z * RAY_LENGTH,
         )
 
         # Populate marker
