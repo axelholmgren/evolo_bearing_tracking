@@ -33,7 +33,9 @@ def generate_launch_description():
                                 "truth_source": "lidar_box",
                                 "lidar_boxes_topic": lidar_boxes_topic,
                                 "lidar_box_id": ParameterValue(lidar_box_id, value_type=int),
-                                "yaw_correction_mode": correction_mode}
+                                "yaw_correction_mode": correction_mode,
+                                "negate_yaw_correction": ParameterValue(
+                                    negate_yaw_correction, value_type=bool)}
 
     return LaunchDescription([
         DeclareLaunchArgument("use_sim_time", default_value="true"),

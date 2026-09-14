@@ -90,13 +90,11 @@ class BearingRayIdsNode(Node):
         result = correct_yaw(
             msg.relative_yaw,
             mode=self.get_parameter("yaw_correction_mode").value,
+            negate=self.get_parameter("negate_yaw_correction").value,
         )
         self.yaw_correction_valid = bool(result.valid)
-        correction_sign = (
-            -1.0 if self.get_parameter("negate_yaw_correction").value else 1.0
-        )
         self.yaw_correction_deg = (
-            correction_sign * float(result.yaw_deg - msg.relative_yaw)
+            float(result.yaw_deg - msg.relative_yaw)
             if self.yaw_correction_valid
             else 0.0
         )

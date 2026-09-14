@@ -28,6 +28,14 @@ def test_shape_mode_excludes_only_the_absolute_offset():
     assert absolute.yaw_deg - shape.yaw_deg == pytest.approx(C_ABSOLUTE)
 
 
+def test_can_negate_complete_correction_for_comparison_experiments():
+    psi = PSI_NODES[12]
+    normal = correct_yaw(psi, mode="absolute")
+    negated = correct_yaw(psi, mode="absolute", negate=True)
+
+    assert negated.yaw_deg - psi == pytest.approx(-(normal.yaw_deg - psi))
+
+
 def test_interpolates_shape_correction_between_lut_nodes():
     left, right = 6, 7
     psi = (PSI_NODES[left] + PSI_NODES[right]) / 2.0
@@ -59,3 +67,5 @@ def test_invalid_mode_and_slew_direction_are_rejected():
         correct_yaw(0.0, mode="other")
     with pytest.raises(ValueError, match="slew_dir"):
         correct_yaw(0.0, slew_dir=2)
+    with pytest.raises(ValueError, match="negate"):
+        correct_yaw(0.0, negate="true")

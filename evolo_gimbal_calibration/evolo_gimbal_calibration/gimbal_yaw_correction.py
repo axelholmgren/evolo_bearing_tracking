@@ -73,7 +73,7 @@ class YawCorrectionResult:
 
 
 def correct_yaw(psi_deg, bias_deg=0.0, slew_dir=0, mode="absolute",
-                clip=True, use_poly=False):
+                clip=True, use_poly=False, negate=False):
     """Correct a reported gimbal yaw into a bearing.
 
     psi_deg   reported yaw, scalar or array [deg]
@@ -86,6 +86,8 @@ def correct_yaw(psi_deg, bias_deg=0.0, slew_dir=0, mode="absolute",
               "shape"    -> zero-mean curve only, for diagnostics/comparison
     clip      retained for backwards-compatible calls; corrections are never
               applied outside the calibrated domain.
+    negate    apply the complete correction with the opposite sign; intended
+              for controlled comparison experiments.
     Returns a YawCorrectionResult with yaw_deg, sigma_deg, and valid.
     """
     if (not np.isscalar(slew_dir) or isinstance(slew_dir, (bool, np.bool_))
@@ -96,6 +98,8 @@ def correct_yaw(psi_deg, bias_deg=0.0, slew_dir=0, mode="absolute",
     valid = (PSI_MIN <= psi) & (psi <= PSI_MAX)
     if mode not in ("shape", "absolute"):
         raise ValueError("mode must be 'shape' or 'absolute'")
+    if not isinstance(negate, (bool, np.bool_)):
+        raise ValueError("negate must be a boolean")
 
     correction = np.zeros_like(psi)
     psi_valid = psi[valid]
@@ -112,6 +116,8 @@ def correct_yaw(psi_deg, bias_deg=0.0, slew_dir=0, mode="absolute",
     correction[valid] = (
         correction[valid] - np.sign(slew_dir) * HYSTERESIS / 2.0 + bias_deg
     )
+    if negate:
+        correction = -correction
 
     return YawCorrectionResult(
         yaw_deg=psi + correction,
