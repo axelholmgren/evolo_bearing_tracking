@@ -2,9 +2,12 @@
 Gimbal yaw correction for the Evolo passive bearing chain.
 
 Maps the Z-1 Pro reported yaw to a corrected bearing, plus a per-measurement
-1-sigma uncertainty suitable for populating R in a bearing-only filter.
+1-sigma uncertainty suitable for populating R in a bearing-only filter.  The
+default is the complete correction measured in the calibration experiment:
+the repeatable shape, the measured absolute offset, and any supplied
+per-boot/direction terms.
 
-    theta_true = psi_readout + c_shape(psi_readout) + b + h(direction)
+    theta_true = psi_readout + c_shape(psi_readout) + c_absolute + b + h(direction)
 
   c_shape  fixed, repeatable nonlinearity  (zero-mean, +/-5 deg peak)
   b        zero-point bias, RE-ESTIMATE AFTER EVERY BOOT (~1.5 deg spread)
@@ -18,10 +21,11 @@ CAVEATS -- read before using the absolute mode
   1. Validity domain is psi in [-95, +82] deg. Do not extrapolate.
   2. c_shape is well supported: the three sweeps agree to 0.68 deg RMS
      after removing one constant each, across a reboot and a pitch change.
-  3. C_ABSOLUTE (+6.12 deg mean) is NOT validated. All sweeps used the same
-     jar in the same position; a ~9 mm decentring of the jar relative to the
-     yaw axis would produce an offset of this size. Use ABSOLUTE mode only
-     after the fixture-rotation test confirms it.
+  3. C_ABSOLUTE (+6.12 deg mean) is the absolute offset measured in the
+     calibration experiment and is part of the default deployed correction.
+     All sweeps used the same jar in the same position; a fixture-rotation
+     test is still needed to establish that this offset transfers to a
+     different fixture or world-bearing reference.
   4. Reference points are quantised to 1 deg; sub-degree structure is not
      resolved by this dataset.
 """
@@ -46,7 +50,7 @@ SIGMA_NODE = np.array([
      0.28,  0.45,  0.31,  0.55,  0.88,  0.81,  0.81,  0.81,  1.10,
      1.10])
 
-C_ABSOLUTE = 6.12      # deg, fixture-dependent -- see caveat 3
+C_ABSOLUTE = 6.12      # deg, measured absolute offset -- see caveat 3
 PSI_MIN, PSI_MAX = -95.0, 82.0
 
 HYSTERESIS = 0.79      # deg, CW readout minus CCW readout (Exp7, same session)
@@ -68,7 +72,7 @@ class YawCorrectionResult:
     valid: object
 
 
-def correct_yaw(psi_deg, bias_deg=0.0, slew_dir=0, mode="shape",
+def correct_yaw(psi_deg, bias_deg=0.0, slew_dir=0, mode="absolute",
                 clip=True, use_poly=False):
     """Correct a reported gimbal yaw into a bearing.
 
@@ -77,8 +81,9 @@ def correct_yaw(psi_deg, bias_deg=0.0, slew_dir=0, mode="shape",
               Pass 0.0 only if you re-zero the gimbal in software at startup.
     slew_dir  +1 if yaw is currently increasing (CW approach),
               -1 if decreasing (CCW), 0 to ignore backlash.
-    mode      "shape"    -> zero-mean correction only (recommended)
-              "absolute" -> also apply C_ABSOLUTE (fixture-dependent)
+    mode      "absolute" -> complete measured correction (default), including
+                             C_ABSOLUTE
+              "shape"    -> zero-mean curve only, for diagnostics/comparison
     clip      retained for backwards-compatible calls; corrections are never
               applied outside the calibrated domain.
     Returns a YawCorrectionResult with yaw_deg, sigma_deg, and valid.

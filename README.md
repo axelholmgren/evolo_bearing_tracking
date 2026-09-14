@@ -1,54 +1,49 @@
 # Evolo bearing tracking
 
-Implementation and evaluation code for the master's thesis *Uncertainty-Aware
-Bearings-Only Tracking of Maritime Targets from a Hydrofoiling Unmanned Surface
-Vessel*.
+ROS 2 packages and analysis tools for the master's thesis
+*Uncertainty-Aware Bearings-Only Tracking of Maritime Targets from a
+Hydrofoiling Unmanned Surface Vessel*.
 
-## Layout
+The project produces world-frame bearing rays from camera detections and gimbal
+orientation, visualises them in RViz, and evaluates their error against known
+or LiDAR-derived target positions. It also includes the gimbal-yaw correction
+used by the bearing pipeline.
 
-- `evolo_gimbal_calibration/` — calibrated yaw correction and gimbal
-  experiment assets.
-- `evolo_bearing/` — bearing rays, launch files, and RViz configuration.
-- `evolo_reference_markers/` — fixed and Smarcduino reference-marker nodes.
-- `evolo_bearing_error/` — bearing-error geometry and CSV logger.
-- `scripts/` — compatibility shell launchers.
+## Contents
+
+- `evolo_bearing/` — bearing-ray nodes, launch files, and RViz configuration.
+- `evolo_gimbal_calibration/` — yaw-correction model and calibration data.
+- `evolo_reference_markers/` — reference-position marker publishers.
+- `evolo_bearing_error/` — bearing-error calculation and CSV logging.
 - `analysis/` — offline plotting and analysis scripts.
-- `docs/` — replay and experiment workflows.
-- `results/` — generated CSV and PNG output, intentionally ignored by Git.
+- `results/` — generated CSVs and plots; ignored by Git.
 
-## Build and launch
+## Build
 
-The ROS packages live under the main workspace, so build them normally:
+Use ROS 2 Humble and build from the workspace root:
 
 ```bash
+cd /home/axelholmgren/code/ros2_ws
 source /opt/ros/humble/setup.bash
-source ~/code/ros2_ws/install/setup.bash
-
-cd ~/code/ros2_ws
 colcon build --packages-select evolo_gimbal_calibration evolo_bearing evolo_reference_markers evolo_bearing_error
 source install/setup.bash
 ```
 
-For rosbag replay:
+## Replay
 
 ```bash
 ros2 launch evolo_bearing markers.launch.py use_sim_time:=true
+```
+
+In another terminal:
+
+```bash
 ros2 bag play <bag-directory> --clock
 ```
 
-To also generate LiDAR-based corrected bounding boxes, add `lidar_boxes:=true`:
+Add `lidar_boxes:=true` to include the LiDAR bounding-box pipeline. The
+`scripts/launch_markers.sh` wrapper is also available for existing workflows.
 
-```bash
-ros2 launch evolo_bearing markers.launch.py use_sim_time:=true lidar_boxes:=true
-```
-
-The existing entry point remains available:
-
-```bash
-cd ~/code/ros2_ws/src/evolo_bearing_tracking/scripts
-./launch_markers.sh
-```
-
-See `docs/rosbag_workflows.md` for the bearing-error CSV workflow.
-For the paired raw-versus-corrected validation experiment, see
-`docs/yaw_correction_experiment.md`.
+See [the replay workflow](evolo_bearing/launch/rosbag_workflows.md) for CSV
+error logging and [the yaw-correction experiment](evolo_bearing/launch/yaw_correction_experiment.md)
+for the paired raw-versus-corrected evaluation.

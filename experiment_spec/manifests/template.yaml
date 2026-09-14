@@ -1,0 +1,52 @@
+experiment:
+  id: null
+  date: null
+  purpose: null
+  status: null
+software:
+  repository_url: null
+  execution_commit: null
+  working_tree_clean: null
+data:
+  bag_name: null
+  bag_path: null
+  checksum: null
+  start_offset_s: null
+  duration_s: null
+target:
+  visual_target: null
+  visual_track_id: null
+  lidar_box_id: null
+  same_target_confirmed: null
+  verification_note: null
+configuration:
+  truth_source: null
+  truth_topic: null
+  truth_frame: null
+  use_sim_time: null
+  playback_rate: null
+  yaw_correction_mode: null
+  negate_yaw_correction: null
+  timestamp_match_tolerance_s: null
+  maximum_accepted_absolute_error_deg: null
+commands:
+  launch: null
+  replay: null
+  analysis: null
+outputs:
+  raw_csv: null
+  corrected_csv: null
+  paired_csv: null
+  plot: null
+results:
+  matched_pairs: null
+  raw_mae_deg: null
+  corrected_mae_deg: null
+  raw_rmse_deg: null
+  corrected_rmse_deg: null
+  mean_improvement_deg: null
+  improved_sample_percentage: null
+validity:
+  suitable_for_thesis_claims: null
+  limitations: null
+notes: null

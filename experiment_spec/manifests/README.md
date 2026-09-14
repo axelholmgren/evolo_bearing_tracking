@@ -1,0 +1,7 @@
+- One important experiment run gets one manifest.
+- The naming convention is `<phase>-<purpose>-<truth>-<mode>-<YYYYMMDD>-r<NN>`.
+- Repeated executions increment the run number.
+- Manifests are committed; generated data under `results/` and rosbags are not.
+- The manifest's execution commit is the commit checked out when the experiment ran, even if the completed manifest is committed afterward.
+- Debugging attempts do not need manifests.
+- A completed experiment uses the same ID for its manifest and results directory.

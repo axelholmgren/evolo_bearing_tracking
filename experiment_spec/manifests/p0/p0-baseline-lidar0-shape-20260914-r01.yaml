@@ -1,0 +1,56 @@
+experiment:
+  id: p0-baseline-lidar0-shape-20260914-r01
+  date: 2026-09-14
+  purpose: Baseline paired raw-versus-shape yaw-correction evaluation against LiDAR box truth.
+  status: planned
+software:
+  repository_url: https://github.com/axelholmgren/evolo_bearing_tracking
+  execution_commit: null
+  working_tree_clean: null
+data:
+  bag_name: null
+  bag_path: null
+  checksum: null
+  start_offset_s: null
+  duration_s: null
+target:
+  visual_target: null
+  visual_track_id: null
+  lidar_box_id: 0
+  same_target_confirmed: null
+  verification_note: null
+configuration:
+  truth_source: LiDAR boxes
+  truth_topic: /bounding_boxes/corrected
+  truth_frame: evolo/odom
+  use_sim_time: true
+  playback_rate: 1.0
+  yaw_correction_mode: shape
+  negate_yaw_correction: false
+  timestamp_match_tolerance_s: 0.08
+  maximum_accepted_absolute_error_deg: 80
+commands:
+  launch: >-
+    ros2 launch evolo_bearing yaw_correction_experiment.launch.py use_sim_time:=true run_id:=p0-baseline-lidar0-shape-20260914-r01 yaw_correction_mode:=shape negate_yaw_correction:=false lidar_box_id:=0
+  replay: ros2 bag play <bag-path> --clock --rate 1.0
+  analysis: >-
+    python3 analysis/plot_scripts/compare_yaw_correction.py <raw-csv> <corrected-csv> --match-tolerance 0.08 --max-abs-error 80 --label p0-baseline-lidar0-shape-20260914-r01 --paired-output-dir results/p0-baseline-lidar0-shape-20260914-r01 --output-dir results/p0-baseline-lidar0-shape-20260914-r01/plots
+outputs:
+  raw_csv: null
+  corrected_csv: null
+  paired_csv: null
+  plot: null
+results:
+  matched_pairs: null
+  raw_mae_deg: null
+  corrected_mae_deg: null
+  raw_rmse_deg: null
+  corrected_rmse_deg: null
+  mean_improvement_deg: null
+  improved_sample_percentage: null
+validity:
+  suitable_for_thesis_claims: false
+  limitations:
+    - Planned experiment; no measurements have been collected.
+    - Visual target and LiDAR box correspondence are not yet confirmed.
+notes: null
