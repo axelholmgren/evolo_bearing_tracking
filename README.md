@@ -12,7 +12,8 @@ used by the bearing pipeline.
 ## Contents
 
 - `evolo_bearing/` — bearing-ray nodes and RViz configuration.
-- `evolo_bearing/launch/` — composable Python launch files for bearing, replay, and comparison runs.
+- `evolo_bearing/launch/` — package-local bearing launch file.
+- `evolo_bearing_config/launch/` — higher-level Python launch files for replay and comparison runs.
 - `evolo_gimbal_calibration/` — yaw-correction model and calibration data.
 - `evolo_reference_markers/` — reference-position marker publishers.
 - `evolo_bearing_error/` — bearing-error calculation and CSV logging.
@@ -26,14 +27,14 @@ Use ROS 2 Humble and build from the workspace root:
 ```bash
 cd /home/axelholmgren/code/ros2_ws
 source /opt/ros/humble/setup.bash
-colcon build --packages-select evolo_gimbal_calibration evolo_bearing evolo_reference_markers evolo_bearing_error
+colcon build --packages-select evolo_gimbal_calibration evolo_bearing evolo_bearing_config evolo_reference_markers evolo_bearing_error
 source install/setup.bash
 ```
 
 ## Replay
 
 ```bash
-ros2 launch evolo_bearing replay.launch.py bag:=<bag-directory>
+ros2 launch evolo_bearing_config replay.launch.py bag:=<bag-directory>
 ```
 
 Use `compare_derived_lidar.launch.py` to launch the LiDAR processing and

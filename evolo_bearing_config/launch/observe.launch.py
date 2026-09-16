@@ -2,6 +2,7 @@
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
@@ -39,6 +40,14 @@ def generate_launch_description():
                 ),
                 description="RViz configuration file.",
             ),
+            DeclareLaunchArgument(
+                "lidar_boxes",
+                default_value="false",
+                description=(
+                    "Start LiDAR preprocessing, clustering, and corrected "
+                    "bounding-box tracking."
+                ),
+            ),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
                     PathJoinSubstitution(
@@ -73,6 +82,43 @@ def generate_launch_description():
                 parameters=[
                     {"use_sim_time": ParameterValue(use_sim_time, value_type=bool)}
                 ],
+            ),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    PathJoinSubstitution(
+                        [
+                            FindPackageShare("pointcloud_preprocessing"),
+                            "launch",
+                            "pointcloud_preprocessing_launch_evolo.py",
+                        ]
+                    )
+                ),
+                condition=IfCondition(LaunchConfiguration("lidar_boxes")),
+                launch_arguments={"use_sim_time": use_sim_time}.items(),
+            ),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    PathJoinSubstitution(
+                        [
+                            FindPackageShare("clustering_segmentation"),
+                            "launch",
+                            "mapping_clustering_segmentation_launch.py",
+                        ]
+                    )
+                ),
+                condition=IfCondition(LaunchConfiguration("lidar_boxes")),
+            ),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    PathJoinSubstitution(
+                        [
+                            FindPackageShare("bb_dataass_tracking"),
+                            "launch",
+                            "tracking_launch_evolo.py",
+                        ]
+                    )
+                ),
+                condition=IfCondition(LaunchConfiguration("lidar_boxes")),
             ),
         ]
     )

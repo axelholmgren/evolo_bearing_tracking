@@ -17,7 +17,7 @@ Build and source the packages, including the bringup package:
 
 ```bash
 cd ~/code/ros2_ws
-colcon build --packages-select evolo_gimbal_calibration evolo_bearing evolo_bearing_error evolo_reference_markers pointcloud_preprocessing clustering_segmentation bb_dataass_tracking
+colcon build --packages-select evolo_gimbal_calibration evolo_bearing evolo_bearing_config evolo_bearing_error evolo_reference_markers pointcloud_preprocessing clustering_segmentation bb_dataass_tracking
 source /opt/ros/humble/setup.bash
 source install/setup.bash
 ```
@@ -30,7 +30,7 @@ reference markers, and the LiDAR preprocessing/tracking chain. It also starts
 the selected bag with `/clock` after the subscribers have initialized.
 
 ```bash
-ros2 launch evolo_bearing compare_derived_lidar.launch.py \
+ros2 launch evolo_bearing_config compare_derived_lidar.launch.py \
   bag:=<bag-directory> run_id:=bag_2026_09_10_absolute
 ```
 

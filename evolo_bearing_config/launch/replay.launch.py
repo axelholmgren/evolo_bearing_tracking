@@ -50,7 +50,11 @@ def generate_launch_description():
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
                     PathJoinSubstitution(
-                        [FindPackageShare("evolo_bearing"), "launch", "observe.launch.py"]
+                        [
+                            FindPackageShare("evolo_bearing_config"),
+                            "launch",
+                            "observe.launch.py",
+                        ]
                     )
                 ),
                 launch_arguments={

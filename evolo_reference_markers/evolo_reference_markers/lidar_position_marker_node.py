@@ -18,12 +18,8 @@ LIDAR_BBOX = "/bounding_boxes/corrected"
 
 class LidarPositionMarkerNode(Node):
     """
-    Publishes smarcduino's GPS position as a SPHERE marker.
-
-    Same as smarcduino_marker_node but reads the waraps stream, which is JSON in a String and updates about every 1.3 s instead of every 10 s.
-
-    convert_latlon_to_utm returns a point in utm_<zone>_<band>, which is already
-    the root of evolo's tf tree, so one transform() gets it into the map frame.
+    Publishes lidar marker based on /bounding_boxes/corrected as a SPHERE with 
+    poisition in the middle of the bounding box.
     """
 
     def __init__(self):

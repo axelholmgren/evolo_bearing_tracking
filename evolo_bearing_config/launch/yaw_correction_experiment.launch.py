@@ -58,7 +58,7 @@ def generate_launch_description():
             DeclareLaunchArgument(
                 "lidar_boxes",
                 default_value="true",
-                description="Start the LiDAR box pipeline from markers.launch.py.",
+                description="Start the LiDAR box pipeline from observe.launch.py.",
             ),
             DeclareLaunchArgument(
                 "lidar_boxes_topic",
@@ -79,12 +79,16 @@ def generate_launch_description():
                         "tracking_ray_evolo_smarcduino.rviz",
                     ]
                 ),
-                description="RViz configuration passed to markers.launch.py.",
+                description="RViz configuration passed to observe.launch.py.",
             ),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
                     PathJoinSubstitution(
-                        [FindPackageShare("evolo_bearing"), "launch", "markers.launch.py"]
+                        [
+                            FindPackageShare("evolo_bearing_config"),
+                            "launch",
+                            "observe.launch.py",
+                        ]
                     )
                 ),
                 launch_arguments={

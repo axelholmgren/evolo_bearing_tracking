@@ -1,4 +1,4 @@
-"""Compare both bearing rays against the fixed reference marker."""
+"""Compare both bearing rays against the Smarcduino reference marker."""
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
@@ -19,14 +19,18 @@ def generate_launch_description():
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
                     PathJoinSubstitution(
-                        [FindPackageShare("evolo_bearing"), "launch", "compare.launch.py"]
+                        [
+                            FindPackageShare("evolo_bearing_config"),
+                            "launch",
+                            "compare.launch.py",
+                        ]
                     )
                 ),
                 launch_arguments={
                     "run_id": LaunchConfiguration("run_id"),
                     "use_sim_time": use_sim_time,
                     "truth_source": "marker",
-                    "truth_topic": "/fixed_position_marker",
+                    "truth_topic": "/smarcduino/position_marker",
                     "yaw_correction_mode": LaunchConfiguration("yaw_correction_mode"),
                     "negate_yaw_correction": LaunchConfiguration("negate_yaw_correction"),
                     "show_rviz": "true",
@@ -34,8 +38,8 @@ def generate_launch_description():
             ),
             Node(
                 package="evolo_reference_markers",
-                executable="fixed_position_marker_node",
-                name="fixed_truth",
+                executable="smarcduino_marker_node",
+                name="smarcduino_truth",
                 output="screen",
                 parameters=[{"use_sim_time": use_sim_time}],
             ),
