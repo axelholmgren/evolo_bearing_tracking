@@ -6,9 +6,9 @@ from pathlib import Path
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch_ros.actions import Node
+from launch_ros.parameter_descriptions import ParameterValue
 from launch_ros.substitutions import FindPackageShare
-
-from evolo_bearing.launch_support import bearing_error_node, bearing_node, rviz_node
 
 
 SAFE_RUN_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]*\Z")
@@ -26,50 +26,119 @@ def _comparison_actions(
     show_rviz,
     rviz_config,
 ):
+    uncorrected_error_parameters = {
+        "use_sim_time": ParameterValue(use_sim_time, value_type=bool),
+        "bearing_topic": "/comparison/uncorrected",
+        "truth_source": truth_source,
+        "yaw_correction_mode": yaw_correction_mode,
+        "negate_yaw_correction": ParameterValue(
+            negate_yaw_correction, value_type=bool
+        ),
+        "save_csv": True,
+        "output_file": f"results/{run_id}_uncorrected.csv",
+        "error_topic": "/bearing_errors/uncorrected",
+    }
+    corrected_error_parameters = {
+        "use_sim_time": ParameterValue(use_sim_time, value_type=bool),
+        "bearing_topic": "/comparison/corrected",
+        "truth_source": truth_source,
+        "yaw_correction_mode": yaw_correction_mode,
+        "negate_yaw_correction": ParameterValue(
+            negate_yaw_correction, value_type=bool
+        ),
+        "save_csv": True,
+        "output_file": f"results/{run_id}_corrected.csv",
+        "error_topic": "/bearing_errors/corrected",
+    }
+    if truth_source == "marker":
+        uncorrected_error_parameters["truth_topic"] = truth_topic
+        corrected_error_parameters["truth_topic"] = truth_topic
+    else:
+        uncorrected_error_parameters["lidar_boxes_topic"] = truth_topic
+        uncorrected_error_parameters["lidar_box_id"] = lidar_box_id
+        corrected_error_parameters["lidar_boxes_topic"] = truth_topic
+        corrected_error_parameters["lidar_box_id"] = lidar_box_id
+
     actions = [
-        bearing_node(
-            "bearing_uncorrected",
-            use_sim_time=use_sim_time,
-            apply_yaw_correction=False,
-            yaw_correction_mode=yaw_correction_mode,
-            negate_yaw_correction=negate_yaw_correction,
-            output_topic="/comparison/uncorrected",
+        Node(
+            package="evolo_bearing",
+            executable="bearing_marker_node",
+            name="bearing_uncorrected",
+            output="screen",
+            parameters=[
+                {
+                    "use_sim_time": ParameterValue(use_sim_time, value_type=bool),
+                    "apply_yaw_correction": ParameterValue(False, value_type=bool),
+                    "yaw_correction_mode": yaw_correction_mode,
+                    "negate_yaw_correction": ParameterValue(
+                        negate_yaw_correction, value_type=bool
+                    ),
+                }
+            ],
+            remappings=[
+                (
+                    "/evolo/gimbal_camera/target_bearing_marker",
+                    "/comparison/uncorrected",
+                )
+            ],
         ),
-        bearing_node(
-            "bearing_corrected",
-            use_sim_time=use_sim_time,
-            apply_yaw_correction=True,
-            yaw_correction_mode=yaw_correction_mode,
-            negate_yaw_correction=negate_yaw_correction,
-            output_topic="/comparison/corrected",
+        Node(
+            package="evolo_bearing",
+            executable="bearing_marker_node",
+            name="bearing_corrected",
+            output="screen",
+            parameters=[
+                {
+                    "use_sim_time": ParameterValue(use_sim_time, value_type=bool),
+                    "apply_yaw_correction": ParameterValue(True, value_type=bool),
+                    "yaw_correction_mode": yaw_correction_mode,
+                    "negate_yaw_correction": ParameterValue(
+                        negate_yaw_correction, value_type=bool
+                    ),
+                }
+            ],
+            remappings=[
+                (
+                    "/evolo/gimbal_camera/target_bearing_marker",
+                    "/comparison/corrected",
+                )
+            ],
         ),
-        bearing_error_node(
-            "error_uncorrected",
-            use_sim_time=use_sim_time,
-            bearing_topic="/comparison/uncorrected",
-            truth_source=truth_source,
-            truth_topic=truth_topic,
-            lidar_box_id=lidar_box_id,
-            run_id=run_id,
-            yaw_correction_mode=yaw_correction_mode,
-            negate_yaw_correction=negate_yaw_correction,
-            error_topic="/bearing_errors/uncorrected",
+        Node(
+            package="evolo_bearing_error",
+            executable="bearing_error_node",
+            name="error_uncorrected",
+            output="screen",
+            parameters=[uncorrected_error_parameters],
         ),
-        bearing_error_node(
-            "error_corrected",
-            use_sim_time=use_sim_time,
-            bearing_topic="/comparison/corrected",
-            truth_source=truth_source,
-            truth_topic=truth_topic,
-            lidar_box_id=lidar_box_id,
-            run_id=run_id,
-            yaw_correction_mode=yaw_correction_mode,
-            negate_yaw_correction=negate_yaw_correction,
-            error_topic="/bearing_errors/corrected",
+        Node(
+            package="evolo_bearing_error",
+            executable="bearing_error_node",
+            name="error_corrected",
+            output="screen",
+            parameters=[corrected_error_parameters],
         ),
     ]
     if show_rviz:
-        actions.append(rviz_node(use_sim_time=use_sim_time, rviz_config=rviz_config))
+        config = rviz_config or PathJoinSubstitution(
+            [
+                FindPackageShare("evolo_bearing"),
+                "config",
+                "tracking_ray_evolo_smarcduino.rviz",
+            ]
+        )
+        actions.append(
+            Node(
+                package="rviz2",
+                executable="rviz2",
+                name="rviz2",
+                output="screen",
+                arguments=["-d", config],
+                parameters=[
+                    {"use_sim_time": ParameterValue(use_sim_time, value_type=bool)}
+                ],
+            )
+        )
     return actions
 
 

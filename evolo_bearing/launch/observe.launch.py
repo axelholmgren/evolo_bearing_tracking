@@ -2,13 +2,11 @@
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
-from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, PythonExpression
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
+from launch_ros.parameter_descriptions import ParameterValue
 from launch_ros.substitutions import FindPackageShare
-
-from evolo_bearing.launch_support import rviz_node
 
 
 def generate_launch_description():
@@ -51,49 +49,30 @@ def generate_launch_description():
                     "use_sim_time": use_sim_time,
                     "yaw_correction_mode": yaw_correction_mode,
                     "negate_yaw_correction": negate_yaw_correction,
+                    "track_ids": LaunchConfiguration("track_ids"),
                 }.items(),
             ),
-            Node(
-                package="evolo_bearing",
-                executable="bearing_marker_ids_node",
-                name="bearing_ray_ids_node",
-                condition=IfCondition(
-                    PythonExpression(["'", LaunchConfiguration("track_ids"), "' != ''"])
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    PathJoinSubstitution(
+                        [
+                            FindPackageShare("evolo_reference_markers"),
+                            "launch",
+                            "reference_markers.launch.py",
+                        ]
+                    )
                 ),
+                launch_arguments={"use_sim_time": use_sim_time}.items(),
+            ),
+            Node(
+                package="rviz2",
+                executable="rviz2",
+                name="rviz2",
                 output="screen",
+                arguments=["-d", LaunchConfiguration("rviz_config")],
                 parameters=[
-                    {
-                        "use_sim_time": use_sim_time,
-                        "track_ids": LaunchConfiguration("track_ids"),
-                        "yaw_correction_mode": yaw_correction_mode,
-                        "negate_yaw_correction": negate_yaw_correction,
-                    }
+                    {"use_sim_time": ParameterValue(use_sim_time, value_type=bool)}
                 ],
-            ),
-            Node(
-                package="evolo_reference_markers",
-                executable="smarcduino_marker_node",
-                name="smarcduino_position_marker_node",
-                output="screen",
-                parameters=[{"use_sim_time": use_sim_time}],
-            ),
-            Node(
-                package="evolo_reference_markers",
-                executable="smarcduino_waraps_position_marker_node",
-                name="smarcduino_waraps_position_marker_node",
-                output="screen",
-                parameters=[{"use_sim_time": use_sim_time}],
-            ),
-            Node(
-                package="evolo_reference_markers",
-                executable="fixed_position_marker_node",
-                name="fixed_position_marker_node",
-                output="screen",
-                parameters=[{"use_sim_time": use_sim_time}],
-            ),
-            rviz_node(
-                use_sim_time=use_sim_time,
-                rviz_config=LaunchConfiguration("rviz_config"),
             ),
         ]
     )

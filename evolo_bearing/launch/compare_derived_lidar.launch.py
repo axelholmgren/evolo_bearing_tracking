@@ -19,8 +19,6 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
 
-from evolo_bearing.launch_support import include_package_launch
-
 
 def _launch(context):
     bag_value = LaunchConfiguration("bag").perform(context).strip()
@@ -58,16 +56,40 @@ def _launch(context):
         output="screen",
     )
     return [
-        include_package_launch(
-            "pointcloud_preprocessing",
-            "pointcloud_preprocessing_launch_evolo.py",
-            launch_arguments={"use_sim_time": use_sim_time},
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                PathJoinSubstitution(
+                    [
+                        FindPackageShare("pointcloud_preprocessing"),
+                        "launch",
+                        "pointcloud_preprocessing_launch_evolo.py",
+                    ]
+                )
+            ),
+            launch_arguments={"use_sim_time": use_sim_time}.items(),
         ),
-        include_package_launch(
-            "clustering_segmentation",
-            "mapping_clustering_segmentation_launch.py",
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                PathJoinSubstitution(
+                    [
+                        FindPackageShare("clustering_segmentation"),
+                        "launch",
+                        "mapping_clustering_segmentation_launch.py",
+                    ]
+                )
+            )
         ),
-        include_package_launch("bb_dataass_tracking", "tracking_launch_evolo.py"),
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                PathJoinSubstitution(
+                    [
+                        FindPackageShare("bb_dataass_tracking"),
+                        "launch",
+                        "tracking_launch_evolo.py",
+                    ]
+                )
+            )
+        ),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
                 PathJoinSubstitution(

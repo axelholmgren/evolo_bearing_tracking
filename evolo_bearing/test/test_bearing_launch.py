@@ -24,15 +24,20 @@ def _argument_names(description):
     }
 
 
-def test_bearing_launch_is_a_single_composable_node():
+def test_bearing_launch_contains_bearing_nodes_and_track_ids_argument():
     description = _load("bearing.launch.py").generate_launch_description()
 
-    assert sum(isinstance(action, Node) for action in description.entities) == 1
+    assert [
+        action._Node__node_name
+        for action in description.entities
+        if isinstance(action, Node)
+    ] == ["bearing_ray_node", "bearing_ray_ids_node"]
     assert _argument_names(description) == {
         "use_sim_time",
         "apply_yaw_correction",
         "yaw_correction_mode",
         "negate_yaw_correction",
+        "track_ids",
         "output_topic",
     }
 
@@ -40,18 +45,29 @@ def test_bearing_launch_is_a_single_composable_node():
 def test_observe_launch_composes_bearing_markers_and_rviz():
     description = _load("observe.launch.py").generate_launch_description()
 
-    assert sum(isinstance(action, IncludeLaunchDescription) for action in description.entities) == 1
+    includes = [
+        action
+        for action in description.entities
+        if isinstance(action, IncludeLaunchDescription)
+    ]
+    assert len(includes) == 2
+    included_locations = [
+        str(action.launch_description_source.location) for action in includes
+    ]
+    assert any(
+        "evolo_bearing" in location and "bearing.launch.py" in location
+        for location in included_locations
+    )
+    assert any(
+        "evolo_reference_markers" in location
+        and "reference_markers.launch.py" in location
+        for location in included_locations
+    )
     assert [
         action._Node__node_name
         for action in description.entities
         if isinstance(action, Node)
-    ] == [
-        "bearing_ray_ids_node",
-        "smarcduino_position_marker_node",
-        "smarcduino_waraps_position_marker_node",
-        "fixed_position_marker_node",
-        "rviz2",
-    ]
+    ] == ["rviz2"]
 
 
 def test_comparison_builds_paired_bearings_and_error_nodes():
