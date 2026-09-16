@@ -14,3 +14,7 @@ log/
 # Generated experiment output
 results/*
 !results/.gitkeep
+
+
+#Project plan
+docs/project_steering/

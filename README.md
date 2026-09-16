@@ -11,7 +11,8 @@ used by the bearing pipeline.
 
 ## Contents
 
-- `evolo_bearing/` — bearing-ray nodes, launch files, and RViz configuration.
+- `evolo_bearing/` — bearing-ray nodes and RViz configuration.
+- `evolo_bearing/launch/` — Python launch workflows for live, replay, and comparison runs.
 - `evolo_gimbal_calibration/` — yaw-correction model and calibration data.
 - `evolo_reference_markers/` — reference-position marker publishers.
 - `evolo_bearing_error/` — bearing-error calculation and CSV logging.
@@ -32,18 +33,12 @@ source install/setup.bash
 ## Replay
 
 ```bash
-ros2 launch evolo_bearing markers.launch.py use_sim_time:=true
+ros2 launch evolo_bearing bearing.launch.py workflow:=replay bag:=<bag-directory>
 ```
 
-In another terminal:
+Use `workflow:=compare_derived_lidar` to launch the LiDAR processing and
+tracking packages as part of a paired correction comparison.
 
-```bash
-ros2 bag play <bag-directory> --clock
-```
-
-Add `lidar_boxes:=true` to include the LiDAR bounding-box pipeline. The
-`scripts/launch_markers.sh` wrapper is also available for existing workflows.
-
-See [the replay workflow](evolo_bearing/launch/rosbag_workflows.md) for CSV
-error logging and [the yaw-correction experiment](evolo_bearing/launch/yaw_correction_experiment.md)
+See [the replay workflow](evolo_bearing/docs/rosbag_workflows.md) for CSV
+error logging and [the yaw-correction experiment](evolo_bearing/docs/yaw_correction_experiment.md)
 for the paired raw-versus-corrected evaluation.

@@ -6,9 +6,13 @@ any geometry, so this measures what actually gets drawn. Both markers are in
 the map frame, so no tf or convergence correction is needed here.
 
     bearing_topic          an ARROW marker, points[0] = camera, points[1] = ray tip
+    bearing_track_id       optional selected-track filter carried in Marker.text
     truth_topic            a SPHERE marker at the known position
     gimbal_gcu_feedback_topic  raw z1 pro Gcudata, logged alongside for
                            gimbal_yaw_correction.py analysis
+    save_csv              calculate errors without persistence when false
+    output_file           optional explicit CSV path; existing files are rejected
+    error_topic           optional live [angle, miss distance, range] output
 
 Pick which pair to compare with the parameters, e.g. the chosen track ids
 against the fixed coordinate. bag only names the output file:
@@ -27,6 +31,7 @@ from pathlib import Path
 
 import rclpy
 from rclpy.node import Node
+from std_msgs.msg import Float64MultiArray
 from visualization_msgs.msg import Marker, MarkerArray
 from z1_pro_msgs.msg import Gcudata
 
@@ -49,6 +54,7 @@ class BearingErrorNode(Node):
         self.declare_parameter(
             "bearing_topic", "/evolo/gimbal_camera/target_bearing_marker"
         )
+        self.declare_parameter("bearing_track_id", "")
         self.declare_parameter("truth_topic", "/fixed_position_marker")
         self.declare_parameter("truth_source", "marker")
         self.declare_parameter("lidar_boxes_topic", "/bounding_boxes/corrected")
@@ -58,7 +64,10 @@ class BearingErrorNode(Node):
         self.declare_parameter(
             "gimbal_gcu_feedback_topic", "/evolo/gimbal_camera/gimbal_gcu_fb"
         )
-        self.declare_parameter("bag", "rosbag2_2026_08_17-15_02_44")
+        self.declare_parameter("bag", "")
+        self.declare_parameter("save_csv", True)
+        self.declare_parameter("output_file", "")
+        self.declare_parameter("error_topic", "")
 
         truth_source = self.get_parameter("truth_source").value
         yaw_correction_mode = self.get_parameter("yaw_correction_mode").value
@@ -71,29 +80,47 @@ class BearingErrorNode(Node):
         else:
             truth_name = self.get_parameter("truth_topic").value.strip("/").replace("/", "_")
 
-        output_csv = RESULTS_DIR / (
-            f"bearing_error_{self.get_parameter('bag').value}_"
-            f"{bearing_name}_vs_{truth_name}_yaw_{yaw_correction_mode}.csv"
+        requested_output = self.get_parameter("output_file").value
+        output_csv = (
+            Path(requested_output).expanduser().resolve()
+            if requested_output
+            else RESULTS_DIR
+            / (
+                f"bearing_error_{self.get_parameter('bag').value}_"
+                f"{bearing_name}_vs_{truth_name}_yaw_{yaw_correction_mode}.csv"
+            )
         )
-        output_csv.parent.mkdir(parents=True, exist_ok=True)
-        self.csv_file = output_csv.open("w", newline="")
-        self.csv_writer = csv.writer(self.csv_file)
-        self.csv_writer.writerow(
-            [
-                "t",
-                "ns",
-                "marker_id",
-                "track_id",
-                "boresight_deg",
-                "angle_in_frame_deg",
-                "gimbal_yaw_deg",
-                "corrected_yaw_deg",
-                "yaw_correction_valid",
-                "yaw_sigma_deg",
-                "angle_error_deg",
-                "miss_distance_m",
-                "range_m",
-            ]
+        self.csv_file = None
+        self.csv_writer = None
+        if self.get_parameter("save_csv").value:
+            output_csv.parent.mkdir(parents=True, exist_ok=True)
+            # Exclusive creation protects existing experiment data even if a
+            # file appears after launch-time validation.
+            self.csv_file = output_csv.open("x", newline="")
+            self.csv_writer = csv.writer(self.csv_file)
+            self.csv_writer.writerow(
+                [
+                    "t",
+                    "ns",
+                    "marker_id",
+                    "track_id",
+                    "boresight_deg",
+                    "angle_in_frame_deg",
+                    "gimbal_yaw_deg",
+                    "corrected_yaw_deg",
+                    "yaw_correction_valid",
+                    "yaw_sigma_deg",
+                    "angle_error_deg",
+                    "miss_distance_m",
+                    "range_m",
+                ]
+            )
+
+        error_topic = self.get_parameter("error_topic").value
+        self.error_publisher = (
+            self.create_publisher(Float64MultiArray, error_topic, qos_profile=10)
+            if error_topic
+            else None
         )
 
         self.truth = None
@@ -138,9 +165,10 @@ class BearingErrorNode(Node):
             if truth_source == "lidar_box"
             else self.get_parameter("truth_topic").value
         )
+        destination = str(output_csv) if self.csv_writer is not None else "CSV disabled"
         self.get_logger().info(
             f"{self.get_parameter('bearing_topic').value} vs "
-            f"{truth_description} -> {output_csv}"
+            f"{truth_description} -> {destination}"
         )
 
     def truth_callback(self, msg: Marker):
@@ -172,6 +200,17 @@ class BearingErrorNode(Node):
         self.yaw_sigma_deg = result.sigma_deg
 
     def bearing_callback(self, msg: Marker):
+        track_id, boresight_deg, angle_in_frame_deg = "", "", ""
+        if msg.text:
+            try:
+                track_id, boresight_deg, angle_in_frame_deg = msg.text.split(",")
+            except ValueError:
+                self.get_logger().warning("Ignoring marker with malformed bearing metadata")
+                return
+        requested_track_id = self.get_parameter("bearing_track_id").value
+        if requested_track_id and track_id != requested_track_id:
+            return
+
         if self.truth is None:
             return  # nothing to compare against yet
 
@@ -205,38 +244,53 @@ class BearingErrorNode(Node):
 
         t = self.get_clock().now().nanoseconds / 1e9
         range_m = math.hypot(truth[0] - origin[0], truth[1] - origin[1])
+        if self.error_publisher is not None:
+            self.error_publisher.publish(
+                Float64MultiArray(
+                    data=[float(angle_error_deg), float(miss_distance_m), float(range_m)]
+                )
+            )
 
         # marker.text carries "track_id,boresight_deg,angle_in_frame_deg" from
         # bearing_marker_ids_node, so the decomposition rides along with the
         # marker it describes instead of needing a second, unsynced topic.
         # Nodes that don't set it (bearing_marker_node) leave these blank.
-        track_id, boresight_deg, angle_in_frame_deg = "", "", ""
-        if msg.text:
-            track_id, boresight_deg, angle_in_frame_deg = msg.text.split(",")
-
-        gimbal_yaw_deg = "" if self.gimbal_yaw_deg is None else f"{self.gimbal_yaw_deg:.3f}"
-        corrected_yaw_deg = "" if self.corrected_yaw_deg is None else f"{self.corrected_yaw_deg:.3f}"
-        yaw_correction_valid = "" if self.yaw_correction_valid is None else str(bool(self.yaw_correction_valid))
-        yaw_sigma_deg = "" if self.yaw_sigma_deg is None else f"{self.yaw_sigma_deg:.3f}"
-
-        self.csv_writer.writerow(
-            [
-                f"{t:.3f}",
-                msg.ns,
-                msg.id,
-                track_id,
-                boresight_deg,
-                angle_in_frame_deg,
-                gimbal_yaw_deg,
-                corrected_yaw_deg,
-                yaw_correction_valid,
-                yaw_sigma_deg,
-                f"{angle_error_deg:.3f}",
-                f"{miss_distance_m:.2f}",
-                f"{range_m:.2f}",
-            ]
+        gimbal_yaw_deg = (
+            "" if self.gimbal_yaw_deg is None else f"{self.gimbal_yaw_deg:.3f}"
         )
-        self.csv_file.flush()  # ctrl-c should not lose the run
+        corrected_yaw_deg = (
+            ""
+            if self.corrected_yaw_deg is None
+            else f"{self.corrected_yaw_deg:.3f}"
+        )
+        yaw_correction_valid = (
+            ""
+            if self.yaw_correction_valid is None
+            else str(bool(self.yaw_correction_valid))
+        )
+        yaw_sigma_deg = (
+            "" if self.yaw_sigma_deg is None else f"{self.yaw_sigma_deg:.3f}"
+        )
+
+        if self.csv_writer is not None:
+            self.csv_writer.writerow(
+                [
+                    f"{t:.3f}",
+                    msg.ns,
+                    msg.id,
+                    track_id,
+                    boresight_deg,
+                    angle_in_frame_deg,
+                    gimbal_yaw_deg,
+                    corrected_yaw_deg,
+                    yaw_correction_valid,
+                    yaw_sigma_deg,
+                    f"{angle_error_deg:.3f}",
+                    f"{miss_distance_m:.2f}",
+                    f"{range_m:.2f}",
+                ]
+            )
+            self.csv_file.flush()  # ctrl-c should not lose the run
 
 
 def main():
@@ -247,7 +301,8 @@ def main():
     except KeyboardInterrupt:
         pass
     finally:
-        node.csv_file.close()
+        if node.csv_file is not None:
+            node.csv_file.close()
         node.destroy_node()
         rclpy.shutdown()
 

@@ -8,6 +8,7 @@
   <license>Apache-2.0</license>
   <buildtool_depend>ament_python</buildtool_depend>
   <exec_depend>rclpy</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
   <exec_depend>visualization_msgs</exec_depend>
   <exec_depend>z1_pro_msgs</exec_depend>
   <exec_depend>evolo_gimbal_calibration</exec_depend>
