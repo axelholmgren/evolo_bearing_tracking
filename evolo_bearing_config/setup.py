@@ -16,6 +16,7 @@ setup(
         ),
         (f"share/{package_name}", ["package.xml"]),
         (f"share/{package_name}/launch", glob("launch/*.launch.py")),
+        (f"share/{package_name}/config", glob("config/*.rviz")),
     ],
     install_requires=["setuptools"],
     zip_safe=True,

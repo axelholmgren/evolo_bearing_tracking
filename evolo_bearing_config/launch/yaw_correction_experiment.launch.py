@@ -74,7 +74,7 @@ def generate_launch_description():
                 "rviz_config",
                 default_value=PathJoinSubstitution(
                     [
-                        FindPackageShare("evolo_bearing"),
+                        FindPackageShare("evolo_bearing_config"),
                         "config",
                         "tracking_ray_evolo_smarcduino.rviz",
                     ]

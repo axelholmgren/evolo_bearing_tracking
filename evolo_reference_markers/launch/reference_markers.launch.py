@@ -33,5 +33,12 @@ def generate_launch_description():
                 output="screen",
                 parameters=[{"use_sim_time": use_sim_time}],
             ),
+            Node(
+                package="evolo_reference_markers",
+                executable="lidar_position_marker_node",
+                name="lidar_position_marker_node",
+                output="screen",
+                parameters=[{"use_sim_time": use_sim_time}],
+            ),
         ]
     )

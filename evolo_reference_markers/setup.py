@@ -23,6 +23,7 @@ setup(
     entry_points={
         "console_scripts": [
             "fixed_position_marker_node = evolo_reference_markers.fixed_position_marker_node:main",
+            "lidar_position_marker_node = evolo_reference_markers.lidar_position_marker_node:main",
             "smarcduino_marker_node = evolo_reference_markers.smarcduino_marker_node:main",
             "smarcduino_waraps_position_marker_node = evolo_reference_markers.smarcduino_waraps_position_marker_node:main",
         ],

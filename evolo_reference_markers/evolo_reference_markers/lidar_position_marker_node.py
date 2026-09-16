@@ -6,11 +6,10 @@ from geographic_msgs.msg import GeoPoint
 from rclpy.duration import Duration
 from rclpy.node import Node
 from smarc_utilities.georef_utils import convert_latlon_to_utm
-from std_msgs.msg import String
 from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
-from visualization_msgs.msg import Marker
+from visualization_msgs.msg import Marker, MarkerArray
 
 WORLD_FRAME = "evolo/odom"
 
@@ -32,13 +31,23 @@ class LidarPositionMarkerNode(Node):
         )
 
         self.subscription = self.create_subscription(
-            msg_type=String,
-            topic="/bounding_boxes/corrected",
+            msg_type=MarkerArray,
+            topic=LIDAR_BBOX,
             callback=self.lidar_position_callback,
             qos_profile=10,
         )
 
-    def lidar_position_callback(self, msg: String):
+    def lidar_position_callback(self, msg: MarkerArray):
+        lidar_box = next(
+            (
+                marker
+                for marker in msg.markers
+                if marker.type == Marker.CUBE and marker.id == 0
+            ),
+            None,
+        )
+        if lidar_box is None:
+            return
 
         # Populate marker
         marker = Marker()
@@ -46,7 +55,7 @@ class LidarPositionMarkerNode(Node):
         marker.header.stamp = self.get_clock().now().to_msg()
         marker.type = Marker.SPHERE
         marker.action = Marker.ADD
-        marker.pose.position = markers.pose.position
+        marker.pose.position = lidar_box.pose.position
         marker.scale.x = 1.0
         marker.scale.y = 1.0
         marker.scale.z = 1.0
