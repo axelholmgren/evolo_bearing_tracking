@@ -1,16 +1,11 @@
 """Replay a rosbag alongside the normal bearing visualisation."""
 
-import math
-from pathlib import Path
-
 from launch import LaunchDescription
 from launch.actions import (
     DeclareLaunchArgument,
     EmitEvent,
     ExecuteProcess,
     IncludeLaunchDescription,
-    LogInfo,
-    OpaqueFunction,
     RegisterEventHandler,
     TimerAction,
 )
@@ -21,53 +16,28 @@ from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
 
 
-def _launch(context):
-    bag_value = LaunchConfiguration("bag").perform(context).strip()
-    if not bag_value:
-        raise RuntimeError("replay requires bag:=<rosbag-directory>")
-    bag = Path(bag_value).expanduser().resolve()
-    if not bag.is_dir() or not (bag / "metadata.yaml").is_file():
-        raise RuntimeError(f"not a rosbag directory with metadata.yaml: {bag}")
-
-    use_sim_time = LaunchConfiguration("use_sim_time").perform(context).lower()
-    if use_sim_time not in {"true", "1"}:
-        raise RuntimeError("rosbag replay uses /clock; keep use_sim_time:=true")
-
-    rate = float(LaunchConfiguration("replay_rate").perform(context))
-    offset = float(LaunchConfiguration("start_offset").perform(context))
-    if not math.isfinite(rate) or rate <= 0:
-        raise RuntimeError("replay_rate must be a positive finite number")
-    if not math.isfinite(offset) or offset < 0:
-        raise RuntimeError("start_offset must be a non-negative finite number")
+def generate_launch_description():
+    bag = LaunchConfiguration("bag")
+    use_sim_time = LaunchConfiguration("use_sim_time")
+    replay_rate = LaunchConfiguration("replay_rate")
+    start_offset = LaunchConfiguration("start_offset")
 
     player = ExecuteProcess(
         cmd=[
             "ros2",
             "bag",
             "play",
-            str(bag),
+            bag,
             "--clock",
             "--rate",
-            str(rate),
+            replay_rate,
             "--start-offset",
-            str(offset),
+            start_offset,
         ],
         name="input_bag",
         output="screen",
     )
-    return [
-        LogInfo(msg=f"Replaying {bag} (use_sim_time=true)"),
-        RegisterEventHandler(
-            OnProcessExit(
-                target_action=player,
-                on_exit=[EmitEvent(event=Shutdown(reason="rosbag playback finished"))],
-            )
-        ),
-        TimerAction(period=2.0, actions=[player]),
-    ]
 
-
-def generate_launch_description():
     return LaunchDescription(
         [
             DeclareLaunchArgument("bag", default_value=""),
@@ -84,12 +54,20 @@ def generate_launch_description():
                     )
                 ),
                 launch_arguments={
-                    "use_sim_time": LaunchConfiguration("use_sim_time"),
+                    "use_sim_time": use_sim_time,
                     "yaw_correction_mode": LaunchConfiguration("yaw_correction_mode"),
-                    "negate_yaw_correction": LaunchConfiguration("negate_yaw_correction"),
+                    "negate_yaw_correction": LaunchConfiguration(
+                        "negate_yaw_correction"
+                    ),
                     "track_ids": LaunchConfiguration("track_ids"),
                 }.items(),
             ),
-            OpaqueFunction(function=_launch),
+            RegisterEventHandler(
+                OnProcessExit(
+                    target_action=player,
+                    on_exit=[EmitEvent(event=Shutdown(reason="rosbag playback finished"))],
+                )
+            ),
+            TimerAction(period=2.0, actions=[player]),
         ]
     )

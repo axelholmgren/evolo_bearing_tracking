@@ -1,15 +1,11 @@
 """Compare corrected and uncorrected rays against LiDAR-derived truth."""
 
-import math
-from pathlib import Path
-
 from launch import LaunchDescription
 from launch.actions import (
     DeclareLaunchArgument,
     EmitEvent,
     ExecuteProcess,
     IncludeLaunchDescription,
-    OpaqueFunction,
     RegisterEventHandler,
     TimerAction,
 )
@@ -20,104 +16,28 @@ from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
 
 
-def _launch(context):
-    bag_value = LaunchConfiguration("bag").perform(context).strip()
-    if not bag_value:
-        raise RuntimeError("compare_derived_lidar requires bag:=<rosbag-directory>")
-    bag = Path(bag_value).expanduser().resolve()
-    if not bag.is_dir() or not (bag / "metadata.yaml").is_file():
-        raise RuntimeError(f"not a rosbag directory with metadata.yaml: {bag}")
-
-    use_sim_time_value = LaunchConfiguration("use_sim_time").perform(context).lower()
-    if use_sim_time_value not in {"true", "1"}:
-        raise RuntimeError("rosbag replay uses /clock; keep use_sim_time:=true")
-
-    rate = float(LaunchConfiguration("replay_rate").perform(context))
-    offset = float(LaunchConfiguration("start_offset").perform(context))
-    if not math.isfinite(rate) or rate <= 0:
-        raise RuntimeError("replay_rate must be a positive finite number")
-    if not math.isfinite(offset) or offset < 0:
-        raise RuntimeError("start_offset must be a non-negative finite number")
-
+def generate_launch_description():
+    bag = LaunchConfiguration("bag")
     use_sim_time = LaunchConfiguration("use_sim_time")
+    replay_rate = LaunchConfiguration("replay_rate")
+    start_offset = LaunchConfiguration("start_offset")
+
     player = ExecuteProcess(
         cmd=[
             "ros2",
             "bag",
             "play",
-            str(bag),
+            bag,
             "--clock",
             "--rate",
-            str(rate),
+            replay_rate,
             "--start-offset",
-            str(offset),
+            start_offset,
         ],
         name="input_bag",
         output="screen",
     )
-    return [
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                PathJoinSubstitution(
-                    [
-                        FindPackageShare("pointcloud_preprocessing"),
-                        "launch",
-                        "pointcloud_preprocessing_launch_evolo.py",
-                    ]
-                )
-            ),
-            launch_arguments={"use_sim_time": use_sim_time}.items(),
-        ),
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                PathJoinSubstitution(
-                    [
-                        FindPackageShare("clustering_segmentation"),
-                        "launch",
-                        "mapping_clustering_segmentation_launch.py",
-                    ]
-                )
-            )
-        ),
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                PathJoinSubstitution(
-                    [
-                        FindPackageShare("bb_dataass_tracking"),
-                        "launch",
-                        "tracking_launch_evolo.py",
-                    ]
-                )
-            )
-        ),
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                PathJoinSubstitution(
-                    [FindPackageShare("evolo_bearing"), "launch", "compare.launch.py"]
-                )
-            ),
-            launch_arguments={
-                "run_id": LaunchConfiguration("run_id"),
-                "use_sim_time": use_sim_time,
-                "truth_source": "lidar_box",
-                "truth_topic": LaunchConfiguration("lidar_boxes_topic"),
-                "lidar_box_id": LaunchConfiguration("lidar_box_id"),
-                "yaw_correction_mode": LaunchConfiguration("yaw_correction_mode"),
-                "negate_yaw_correction": LaunchConfiguration("negate_yaw_correction"),
-                "show_rviz": "false",
-            }.items(),
-        ),
-        RegisterEventHandler(
-            OnProcessExit(
-                target_action=player,
-                on_exit=[EmitEvent(event=Shutdown(reason="rosbag playback finished"))],
-            )
-        ),
-        TimerAction(period=2.0, actions=[player]),
-    ]
 
-
-def generate_launch_description():
     return LaunchDescription(
         [
             DeclareLaunchArgument("bag", default_value=""),
@@ -131,6 +51,65 @@ def generate_launch_description():
             DeclareLaunchArgument("lidar_box_id", default_value="0"),
             DeclareLaunchArgument("yaw_correction_mode", default_value="absolute"),
             DeclareLaunchArgument("negate_yaw_correction", default_value="false"),
-            OpaqueFunction(function=_launch),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    PathJoinSubstitution(
+                        [
+                            FindPackageShare("pointcloud_preprocessing"),
+                            "launch",
+                            "pointcloud_preprocessing_launch_evolo.py",
+                        ]
+                    )
+                ),
+                launch_arguments={"use_sim_time": use_sim_time}.items(),
+            ),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    PathJoinSubstitution(
+                        [
+                            FindPackageShare("clustering_segmentation"),
+                            "launch",
+                            "mapping_clustering_segmentation_launch.py",
+                        ]
+                    )
+                )
+            ),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    PathJoinSubstitution(
+                        [
+                            FindPackageShare("bb_dataass_tracking"),
+                            "launch",
+                            "tracking_launch_evolo.py",
+                        ]
+                    )
+                )
+            ),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    PathJoinSubstitution(
+                        [FindPackageShare("evolo_bearing"), "launch", "compare.launch.py"]
+                    )
+                ),
+                launch_arguments={
+                    "run_id": LaunchConfiguration("run_id"),
+                    "use_sim_time": use_sim_time,
+                    "truth_source": "lidar_box",
+                    "truth_topic": LaunchConfiguration("lidar_boxes_topic"),
+                    "lidar_box_id": LaunchConfiguration("lidar_box_id"),
+                    "yaw_correction_mode": LaunchConfiguration("yaw_correction_mode"),
+                    "negate_yaw_correction": LaunchConfiguration(
+                        "negate_yaw_correction"
+                    ),
+                    "show_rviz": "false",
+                }.items(),
+            ),
+            RegisterEventHandler(
+                OnProcessExit(
+                    target_action=player,
+                    on_exit=[EmitEvent(event=Shutdown(reason="rosbag playback finished"))],
+                )
+            ),
+            TimerAction(period=2.0, actions=[player]),
         ]
     )
