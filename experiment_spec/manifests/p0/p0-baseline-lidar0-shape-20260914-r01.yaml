@@ -31,7 +31,7 @@ configuration:
   maximum_accepted_absolute_error_deg: 80
 commands:
   launch: >-
-    ros2 launch evolo_bearing bearing.launch.py workflow:=compare_derived_lidar bag:=<bag-path> run_id:=p0-baseline-lidar0-shape-20260914-r01 yaw_correction_mode:=shape negate_yaw_correction:=false
+    ros2 launch evolo_bearing compare_derived_lidar.launch.py bag:=<bag-path> run_id:=p0-baseline-lidar0-shape-20260914-r01 yaw_correction_mode:=shape negate_yaw_correction:=false
   replay: null
   analysis: >-
     python3 analysis/plot_scripts/compare_yaw_correction.py <raw-csv> <corrected-csv> --match-tolerance 0.08 --max-abs-error 80 --label p0-baseline-lidar0-shape-20260914-r01 --paired-output-dir results/p0-baseline-lidar0-shape-20260914-r01 --output-dir results/p0-baseline-lidar0-shape-20260914-r01/plots

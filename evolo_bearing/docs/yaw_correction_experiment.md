@@ -30,8 +30,7 @@ reference markers, and the LiDAR preprocessing/tracking chain. It also starts
 the selected bag with `/clock` after the subscribers have initialized.
 
 ```bash
-ros2 launch evolo_bearing bearing.launch.py \
-  workflow:=compare_derived_lidar \
+ros2 launch evolo_bearing compare_derived_lidar.launch.py \
   bag:=<bag-directory> run_id:=bag_2026_09_10_absolute
 ```
 
