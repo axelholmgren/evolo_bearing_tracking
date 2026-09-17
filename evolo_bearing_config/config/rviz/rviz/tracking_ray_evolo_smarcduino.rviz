@@ -6,10 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
-        - /Smarcduino LatLon1
-        - /Smarcduino WARAPS1
         - /Odometry1/Topic1
-        - /PointCloud21
       Splitter Ratio: 0.5
     Tree Height: 520
   - Class: rviz_common/Selection
@@ -98,28 +95,29 @@ Visualization Manager:
       Show Axes: true
       Show Names: false
       Tree:
-        evolo/map:
-          evolo/z1_global_camera_link:
-            evolo/z1_global_optical_frame:
-              {}
+        evolo/odom:
+          base_footprint:
+            {}
+          evolo/base_link:
+            evolo/lidar_link:
+              os_sensor:
+                os_imu:
+                  {}
+                os_lidar:
+                  {}
+            evolo/z1_base_link:
+              evolo/z1_yaw_link:
+                evolo/z1_roll_link:
+                  evolo/z1_pitch_link:
+                    evolo/z1_camera_link:
+                      evolo/z1_optical_frame:
+                        {}
+          evolo/map:
+            evolo/z1_global_camera_link:
+              evolo/z1_global_optical_frame:
+                {}
         utm:
-          evolo/odom:
-            base_footprint:
-              {}
-            evolo/base_link:
-              evolo/lidar_link:
-                os_sensor:
-                  os_imu:
-                    {}
-                  os_lidar:
-                    {}
-              evolo/z1_base_link:
-                evolo/z1_yaw_link:
-                  evolo/z1_roll_link:
-                    evolo/z1_pitch_link:
-                      evolo/z1_camera_link:
-                        evolo/z1_optical_frame:
-                          {}
+          {}
         utm_34_V:
           {}
       Update Interval: 0
@@ -154,7 +152,7 @@ Visualization Manager:
       Enabled: true
       Name: FIxed Marker
       Namespaces:
-        "": true
+        {}
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -180,7 +178,7 @@ Visualization Manager:
       Enabled: true
       Name: Smarcduino WARAPS
       Namespaces:
-        "": true
+        {}
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -193,11 +191,10 @@ Visualization Manager:
       Enabled: true
       Name: Corrected LiDAR Boxes
       Namespaces:
-        {}
+        "": true
       Topic:
         Depth: 5
         Durability Policy: Volatile
-        Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /bounding_boxes/corrected
@@ -270,9 +267,9 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 2428
+      Max Intensity: 252
       Min Color: 0; 0; 0
-      Min Intensity: 6
+      Min Intensity: 8
       Name: PointCloud2
       Position Transformer: XYZ
       Selectable: true
@@ -292,7 +289,7 @@ Visualization Manager:
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: evolo/map
+    Fixed Frame: evolo/odom
     Frame Rate: 30
   Name: root
   Tools:
@@ -335,25 +332,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 14.107099533081055
+      Distance: 80.67486572265625
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.9329480528831482
-        Y: -0.7095908522605896
-        Z: 4.923589706420898
+        X: 7.131903648376465
+        Y: -3.8468728065490723
+        Z: 6.04797887802124
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.3153991401195526
+      Pitch: 1.5697963237762451
       Target Frame: evolo/base_link
       Value: Orbit (rviz)
-      Yaw: 2.6953988075256348
+      Yaw: 2.365399122238159
     Saved: ~
 Window Geometry:
   Displays:

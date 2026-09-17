@@ -1,0 +1,183 @@
+# ================================================================
+# WHAT TO LAUNCH
+# ================================================================
+
+holy:
+  ros__parameters:
+
+    # Bearing
+    bearing_ray: true
+    bearing_ray_ids: false
+
+    # Error calculation / logging
+    bearing_error: true
+
+    # Reference markers
+    fixed_marker: false
+    smarcduino_marker: false
+    waraps_marker: false
+    lidar_marker: true
+
+    # LiDAR preprocessing + clustering + bbox tracking
+    lidar_boxes: true
+
+    # Visualization
+    rviz: true
+
+    # Rosbag replay
+    rosbag: true
+
+
+    # ------------------------------------------------------------
+    # Launch settings
+    # ------------------------------------------------------------
+
+    bearing_output_topic: /evolo/gimbal_camera/target_bearing_marker
+
+    # Empty = packaged default.
+    rviz_config: ""
+
+    # Required when rosbag: true.
+    bag_path: "~/ros_logs/AXL/CAM/rosbag2_2026_08_17-12_20_02/"
+    
+    clock: true
+    replay_rate: 1.0
+    start_offset: 0.0
+
+
+# ================================================================
+# COMMON ROS PARAMETERS
+# ================================================================
+
+/**:
+  ros__parameters:
+
+    # false for live operation
+    # true for rosbag playback with --clock
+    use_sim_time: true
+
+
+# ================================================================
+# BEARING RAY
+# ================================================================
+
+bearing_ray_node:
+  ros__parameters:
+
+    gimbal_gcu_feedback_topic: /evolo/gimbal_camera/gimbal_gcu_fb
+
+    # Completely enable / disable yaw correction.
+    apply_yaw_correction: false
+
+    # absolute or shape
+    yaw_correction_mode: shape
+
+    negate_yaw_correction: false
+
+
+# ================================================================
+# SELECTED TRACK-ID BEARING RAYS
+# ================================================================
+
+bearing_ray_ids_node:
+  ros__parameters:
+    
+    
+    track_ids:
+      - 44
+      - 68
+      - 99
+
+    gimbal_gcu_feedback_topic: /evolo/gimbal_camera/gimbal_gcu_fb
+
+    apply_yaw_correction: false
+
+    # absolute or shape
+    yaw_correction_mode: shape
+
+    negate_yaw_correction: false
+
+
+# ================================================================
+# BEARING ERROR
+# ================================================================
+
+bearing_error_node:
+  ros__parameters:
+
+    bearing_topic: /evolo/gimbal_camera/target_bearing_marker
+
+    # Empty = no selected-track filtering.
+    bearing_track_id: ""
+
+    # marker or lidar_box
+    truth_source: lidar_box
+
+
+    # ------------------------------------------------------------
+    # Marker truth
+    # ------------------------------------------------------------
+
+    truth_topic: /fixed_position_marker
+
+
+    # ------------------------------------------------------------
+    # LiDAR truth
+    # ------------------------------------------------------------
+
+    lidar_boxes_topic: /bounding_boxes/corrected
+    lidar_box_id: 0
+
+
+    # ------------------------------------------------------------
+    # Correction metadata
+    # ------------------------------------------------------------
+
+    yaw_correction_mode: shape
+    negate_yaw_correction: false
+
+    gimbal_gcu_feedback_topic: /evolo/gimbal_camera/gimbal_gcu_fb
+
+
+    # ------------------------------------------------------------
+    # Logging
+    # ------------------------------------------------------------
+
+    # Used in automatic output filename generation.
+    bag: ""
+
+    save_csv: true
+
+    # Empty = automatic output filename.
+    output_file: "~/code/ros2_ws/src/evolo_bearing_tracking/results/timing/baseline"
+
+    # Empty = do not publish a live error topic.
+    error_topic: ""
+
+
+# ================================================================
+# FIXED POSITION MARKER
+# ================================================================
+
+fixed_position_marker_node:
+  ros__parameters:
+
+    latitude: 59.2985134
+    longitude: 18.2146923
+    altitude: 0.0
+
+    marker_topic: /fixed_position_marker
+
+
+# ================================================================
+# MARKERS WITHOUT EXTRA PARAMETERS
+# ================================================================
+
+smarcduino_position_marker_node:
+  ros__parameters: {}
+
+smarcduino_waraps_position_marker_node:
+  ros__parameters: {}
+
+lidar_position_marker_node:
+  ros__parameters: {}

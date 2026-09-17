@@ -24,7 +24,8 @@ from .bearing_math import rotate_bearing_xy
 # WORLD_FRAME = "evolo/map"
 WORLD_FRAME = "evolo/odom"
 RAY_LENGTH = 300  # Arbitrary ray length for visualization
-MARKER_COLOR_DEFAULT = (1.0, 0.0, 0.0)
+MARKER_COLOR_CORRECTION_DISABLED = (1.0, 0.2, 0.6)
+MARKER_COLOR_CORRECTION_INVALID = (1.0, 0.0, 0.0)
 MARKER_COLOR_YAW_CORRECTION_ACTIVE = (0.0, 1.0, 0.0)
 
 
@@ -93,7 +94,14 @@ class BearingRayNode(Node):
                 target_frame=WORLD_FRAME,
                 source_frame=msg.header.frame_id,
                 time=Time(),
-            )
+            ) #NOTE original using latest time
+
+           # transform = self.tf_buffer.lookup_transform(
+           #      target_frame=WORLD_FRAME,
+           #      source_frame=msg.header.frame_id,
+           #      time=Time.from_msg(msg.header.stamp),
+           #  ) #NOTE perserve time 
+
         except TransformException as ex:
             self.get_logger().info(
                 f"Could not transform {WORLD_FRAME} to {msg.header.frame_id}: {ex}"
@@ -149,11 +157,12 @@ class BearingRayNode(Node):
         marker.scale.y = 1.0  # point width
         marker.scale.z = 1.0  # point length
         marker.color.a = 1.0
-        color = (
-            MARKER_COLOR_YAW_CORRECTION_ACTIVE
-            if correction_active
-            else MARKER_COLOR_DEFAULT
-        )
+        if not self.get_parameter("apply_yaw_correction").value:
+            color = MARKER_COLOR_CORRECTION_DISABLED
+        elif correction_active:
+            color = MARKER_COLOR_YAW_CORRECTION_ACTIVE
+        else:
+            color = MARKER_COLOR_CORRECTION_INVALID
         marker.color.r, marker.color.g, marker.color.b = color
         marker.lifetime = Duration(seconds=1).to_msg()
 

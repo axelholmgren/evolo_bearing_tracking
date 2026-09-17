@@ -1,83 +1,155 @@
 import importlib.util
 from pathlib import Path
 
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
-from launch_ros.actions import Node
+import yaml
+
+from launch.actions import (
+    DeclareLaunchArgument,
+    OpaqueFunction,
+)
 
 
-_LAUNCH_DIR = Path(__file__).parents[1] / "launch"
+_PACKAGE_DIR = Path(__file__).parents[1]
+
+_LAUNCH_FILE = (
+    _PACKAGE_DIR
+    / "launch"
+    / "holy.launch.py"
+)
+
+_TEMPLATE_FILE = (
+    _PACKAGE_DIR
+    / "config"
+    / "experiments"
+    / "template.yaml"
+)
 
 
-def _load(name):
-    path = _LAUNCH_DIR / name
-    spec = importlib.util.spec_from_file_location(path.stem, path)
+def _load_holy():
+    spec = importlib.util.spec_from_file_location(
+        "holy_launch",
+        _LAUNCH_FILE,
+    )
+
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
+
     return module
 
 
-def _argument_names(description):
-    return {
-        action.name
-        for action in description.entities
-        if isinstance(action, DeclareLaunchArgument)
-    }
+def _load_template():
+    with _TEMPLATE_FILE.open() as file:
+        return yaml.safe_load(file)
 
 
-def test_observe_launch_composes_bearing_markers_and_rviz():
-    description = _load("observe.launch.py").generate_launch_description()
+def test_holy_has_one_launch_argument():
+    description = (
+        _load_holy()
+        .generate_launch_description()
+    )
 
-    includes = [
+    arguments = [
         action
         for action in description.entities
-        if isinstance(action, IncludeLaunchDescription)
+        if isinstance(
+            action,
+            DeclareLaunchArgument,
+        )
     ]
-    assert len(includes) == 5
-    included_locations = [
-        str(action.launch_description_source.location) for action in includes
+
+    opaque_functions = [
+        action
+        for action in description.entities
+        if isinstance(
+            action,
+            OpaqueFunction,
+        )
     ]
-    assert any(
-        "evolo_bearing" in location and "bearing.launch.py" in location
-        for location in included_locations
-    )
-    assert any(
-        "evolo_reference_markers" in location
-        and "reference_markers.launch.py" in location
-        for location in included_locations
-    )
-    assert len([action for action in description.entities if isinstance(action, Node)]) == 1
+
+    assert len(arguments) == 1
+    assert arguments[0].name == "config"
+
+    assert len(opaque_functions) == 1
 
 
-def test_comparison_launch_contains_paired_nodes_and_arguments():
-    description = _load("compare.launch.py").generate_launch_description()
+def test_template_has_launch_settings():
+    config = _load_template()
 
-    assert len([action for action in description.entities if isinstance(action, Node)]) == 5
-    assert _argument_names(description) == {
-        "run_id",
-        "use_sim_time",
-        "truth_source",
-        "truth_topic",
-        "lidar_box_id",
+    settings = config[
+        "holy"
+    ]["ros__parameters"]
+
+    expected = {
+        "bearing_ray",
+        "bearing_ray_ids",
+        "bearing_error",
+        "fixed_marker",
+        "smarcduino_marker",
+        "waraps_marker",
+        "lidar_marker",
+        "lidar_boxes",
+        "rviz",
+        "rosbag",
+        "bearing_output_topic",
+        "rviz_config",
+        "bag_path",
+        "replay_rate",
+        "start_offset",
+    }
+
+    assert expected <= set(settings)
+
+
+def test_template_has_bearing_parameters():
+    config = _load_template()
+
+    bearing = config[
+        "bearing_ray_node"
+    ]["ros__parameters"]
+
+    assert set(bearing) == {
+        "gimbal_gcu_feedback_topic",
+        "apply_yaw_correction",
         "yaw_correction_mode",
         "negate_yaw_correction",
-        "show_rviz",
-        "rviz_config",
     }
 
 
-def test_derived_lidar_launch_exposes_replay_and_lidar_arguments():
-    description = _load(
-        "compare_derived_lidar.launch.py"
-    ).generate_launch_description()
+def test_template_has_track_parameters():
+    config = _load_template()
 
-    assert _argument_names(description) == {
-        "bag",
-        "run_id",
-        "use_sim_time",
-        "replay_rate",
-        "start_offset",
+    bearing_ids = config[
+        "bearing_ray_ids_node"
+    ]["ros__parameters"]
+
+    assert set(bearing_ids) == {
+        "track_ids",
+        "gimbal_gcu_feedback_topic",
+        "apply_yaw_correction",
+        "yaw_correction_mode",
+        "negate_yaw_correction",
+    }
+
+
+def test_template_has_error_parameters():
+    config = _load_template()
+
+    error = config[
+        "bearing_error_node"
+    ]["ros__parameters"]
+
+    assert set(error) == {
+        "bearing_topic",
+        "bearing_track_id",
+        "truth_source",
+        "truth_topic",
         "lidar_boxes_topic",
         "lidar_box_id",
         "yaw_correction_mode",
         "negate_yaw_correction",
+        "gimbal_gcu_feedback_topic",
+        "bag",
+        "save_csv",
+        "output_file",
+        "error_topic",
     }

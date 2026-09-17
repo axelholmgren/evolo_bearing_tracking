@@ -1,21 +1,33 @@
 <?xml version="1.0"?>
-<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd"
+             schematypens="http://www.w3.org/2001/XMLSchema"?>
+
 <package format="3">
   <name>evolo_bearing_config</name>
   <version>0.1.0</version>
-  <description>Higher-level launch files for Evolo bearing tracking.</description>
-  <maintainer email="axelholmgren@users.noreply.github.com">Axel Ericson Holmgren</maintainer>
+
+  <description>
+    Higher-level configuration for Evolo bearing tracking.
+  </description>
+
+  <maintainer email="axelholmgren@users.noreply.github.com">
+    Axel Ericson Holmgren
+  </maintainer>
+
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_python</buildtool_depend>
 
   <exec_depend>launch</exec_depend>
   <exec_depend>launch_ros</exec_depend>
+  <exec_depend>python3-yaml</exec_depend>
   <exec_depend>ros2bag</exec_depend>
   <exec_depend>rviz2</exec_depend>
+
   <exec_depend>evolo_bearing</exec_depend>
   <exec_depend>evolo_reference_markers</exec_depend>
   <exec_depend>evolo_bearing_error</exec_depend>
+
   <exec_depend>pointcloud_preprocessing</exec_depend>
   <exec_depend>clustering_segmentation</exec_depend>
   <exec_depend>bb_dataass_tracking</exec_depend>
