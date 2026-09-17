@@ -3,24 +3,16 @@
 from pathlib import Path
 
 import yaml
-
 from launch import LaunchDescription
-from launch.actions import (
-    DeclareLaunchArgument,
-    EmitEvent,
-    ExecuteProcess,
-    IncludeLaunchDescription,
-    OpaqueFunction,
-    RegisterEventHandler,
-    TimerAction,
-)
+from launch.actions import (DeclareLaunchArgument, EmitEvent, ExecuteProcess,
+                            IncludeLaunchDescription, OpaqueFunction,
+                            RegisterEventHandler, TimerAction)
 from launch.event_handlers import OnProcessExit
 from launch.events import Shutdown
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
-
 
 BEARING_TOPIC = "/evolo/gimbal_camera/target_bearing_marker"
 
@@ -143,6 +135,7 @@ def _launch_experiment(context):
             _include(
                 "clustering_segmentation",
                 "mapping_clustering_segmentation_launch.py",
+                { "use_sim_time": _bool(use_sim_time)},
             )
         )
 
@@ -150,6 +143,8 @@ def _launch_experiment(context):
             _include(
                 "bb_dataass_tracking",
                 "tracking_launch_evolo.py",
+                {"use_sim_time": _bool(use_sim_time)},
+
             )
         )
 
