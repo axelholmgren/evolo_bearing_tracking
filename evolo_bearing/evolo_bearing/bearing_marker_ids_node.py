@@ -111,10 +111,15 @@ class BearingRayIdsNode(Node):
             return  # none of the chosen ids in frame, let the marker expire
 
         try:
+            # transform = self.tf_buffer.lookup_transform(
+            #     target_frame=WORLD_FRAME,
+            #     source_frame=CAMERA_FRAME,
+            #     time=Time(),
+            # ) #NOTE original
             transform = self.tf_buffer.lookup_transform(
                 target_frame=WORLD_FRAME,
                 source_frame=CAMERA_FRAME,
-                time=Time(),
+                time=Time.from_msg(msg.header.stamp),
             )
         except TransformException as ex:
             self.get_logger().info(
@@ -181,7 +186,8 @@ class BearingRayIdsNode(Node):
             # RViz distinguishes markers by their (namespace, id) pair.
             marker = Marker()
             marker.header.frame_id = WORLD_FRAME
-            marker.header.stamp = self.get_clock().now().to_msg()
+            # marker.header.stamp = self.get_clock().now().to_msg() #NOTE original
+            marker.header.stamp = msg.header.stamp
             marker.ns = "selected_bearing_rays"
             marker.id = self.marker_ids[detection.id]
             marker.type = Marker.ARROW
@@ -190,7 +196,9 @@ class BearingRayIdsNode(Node):
             # not rendered by ARROW markers -- reused to carry the bearing
             # decomposition out to bearing_error_node without a second topic
             # to keep in sync (id, boresight_yaw_deg, angle_in_frame_deg)
-            marker.text = f"{detection.id},{boresight_yaw_deg:.3f},{math.degrees(yaw):.3f}"
+            marker.text = (
+                f"{detection.id},{boresight_yaw_deg:.3f},{math.degrees(yaw):.3f}"
+            )
             marker.scale.x = 0.1  # shaft
             marker.scale.y = 1.0  # head width
             marker.scale.z = 1.0  # head length
