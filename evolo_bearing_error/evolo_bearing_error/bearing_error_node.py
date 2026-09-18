@@ -96,7 +96,7 @@ class BearingErrorNode(Node):
             output_csv.parent.mkdir(parents=True, exist_ok=True)
             # Exclusive creation protects existing experiment data even if a
             # file appears after launch-time validation.
-            self.csv_file = output_csv.open("x", newline="")
+            self.csv_file = output_csv.open("w", newline="")
             self.csv_writer = csv.writer(self.csv_file)
             self.csv_writer.writerow(
                 [
