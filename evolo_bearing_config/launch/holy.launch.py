@@ -184,11 +184,20 @@ def _launch_experiment(context):
     # Rosbag
     if holy.get("rosbag", False):
         bag_path = holy.get("bag_path", "")
+        replay_rate = float(holy.get("replay_rate", 1.0))
+        start_offset = float(holy.get("start_offset", 0.0))
+        stop_time = holy.get("stop_time")
 
         if not bag_path:
             raise ValueError(
                 "rosbag is enabled but bag_path is empty"
             )
+        if replay_rate <= 0:
+            raise ValueError("replay_rate must be positive")
+        if stop_time is not None:
+            stop_time = float(stop_time)
+            if stop_time <= start_offset:
+                raise ValueError("stop_time must be greater than start_offset")
 
         player = ExecuteProcess(
             cmd=[
@@ -198,9 +207,9 @@ def _launch_experiment(context):
                 str(Path(bag_path).expanduser()),
                 *(["--clock"] if holy.get("clock", True) else []),
                 "--rate",
-                str(holy.get("replay_rate", 1.0)),
+                str(replay_rate),
                 "--start-offset",
-                str(holy.get("start_offset", 0.0)),
+                str(start_offset),
             ],
             name="input_bag",
             output="screen",
@@ -227,6 +236,17 @@ def _launch_experiment(context):
                 actions=[player],
             )
         )
+        if stop_time is not None:
+            actions.append(
+                TimerAction(
+                    period=2.0 + (stop_time - start_offset) / replay_rate,
+                    actions=[
+                        EmitEvent(
+                            event=Shutdown(reason="configured rosbag stop time reached")
+                        )
+                    ],
+                )
+            )
 
     return actions
 

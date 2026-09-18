@@ -6,7 +6,9 @@ import yaml
 from launch.actions import (
     DeclareLaunchArgument,
     OpaqueFunction,
+    TimerAction,
 )
+from launch import LaunchContext
 
 
 _PACKAGE_DIR = Path(__file__).parents[1]
@@ -95,9 +97,28 @@ def test_template_has_launch_settings():
         "bag_path",
         "replay_rate",
         "start_offset",
+        "stop_time",
     }
 
     assert expected <= set(settings)
+
+
+def test_stop_time_uses_bag_time_after_start_offset(tmp_path):
+    config = _load_template()
+    settings = config["holy"]["ros__parameters"]
+    settings.update(
+        rosbag=True, bag_path="/tmp/input", start_offset=100.0,
+        replay_rate=2.0, stop_time=150.0,
+    )
+    config_path = tmp_path / "experiment.yaml"
+    config_path.write_text(yaml.safe_dump(config))
+    context = LaunchContext()
+    context.launch_configurations["config"] = str(config_path)
+    timers = [
+        action for action in _load_holy()._launch_experiment(context)
+        if isinstance(action, TimerAction)
+    ]
+    assert [timer._TimerAction__period for timer in timers] == [2.0, 27.0]
 
 
 def test_template_has_bearing_parameters():

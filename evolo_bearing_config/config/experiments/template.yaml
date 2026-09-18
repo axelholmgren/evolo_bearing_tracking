@@ -52,6 +52,8 @@ holy:
 
     replay_rate: 1.0
     start_offset: 0.0
+    # Absolute bag time in seconds; null plays to the end.
+    stop_time: null
 
 
 # ================================================================
