@@ -1,13 +1,8 @@
 import rclpy
-from geometry_msgs.msg import (
-    Point,
-    QuaternionStamped,
-    Transform,
-    TransformStamped,
-    Vector3,
-    Vector3Stamped,
-)
+from geometry_msgs.msg import (Point, QuaternionStamped, Transform,
+                               TransformStamped, Vector3, Vector3Stamped)
 from rclpy.duration import Duration
+from rclpy.executors import MultiThreadedExecutor  # NOTE: for waiting on tf
 from rclpy.node import Node
 from rclpy.time import Time
 from tf2_geometry_msgs import do_transform_vector3
@@ -90,17 +85,23 @@ class BearingRayNode(Node):
             and self.yaw_correction_valid
         )
         try:
+            # transform = self.tf_buffer.lookup_transform(
+            #     target_frame=WORLD_FRAME,
+            #     source_frame=msg.header.frame_id,
+            #     time=Time(),
+            # ) #NOTE original using latest time
+
+            # transform = self.tf_buffer.lookup_transform(
+            #      target_frame=WORLD_FRAME,
+            #      source_frame=msg.header.frame_id,
+            #      time=Time.from_msg(msg.header.stamp),
+            #  ) #NOTE perserve time
             transform = self.tf_buffer.lookup_transform(
                 target_frame=WORLD_FRAME,
                 source_frame=msg.header.frame_id,
-                time=Time(),
-            ) #NOTE original using latest time
-
-           # transform = self.tf_buffer.lookup_transform(
-           #      target_frame=WORLD_FRAME,
-           #      source_frame=msg.header.frame_id,
-           #      time=Time.from_msg(msg.header.stamp),
-           #  ) #NOTE perserve time 
+                time=Time.from_msg(msg.header.stamp),
+                timeout=Duration(seconds=0.15),
+            )  # NOTE wait for tf
 
         except TransformException as ex:
             self.get_logger().info(
@@ -149,7 +150,8 @@ class BearingRayNode(Node):
         # Populate marker
         marker = Marker()
         marker.header.frame_id = WORLD_FRAME
-        marker.header.stamp = self.get_clock().now().to_msg()
+        # marker.header.stamp = self.get_clock().now().to_msg() #NOTE original
+        marker.header.stamp = msg.header.stamp  # NOTE change to output the input stamp
         marker.type = Marker.ARROW
         marker.action = Marker.ADD
         marker.points = [origin, end_point]
@@ -170,16 +172,30 @@ class BearingRayNode(Node):
 
 
 def main():
+    #NOTE: original
+    # rclpy.init()
+    # node = BearingRayNode()
+    # try:
+    #     rclpy.spin(node)
+    # except KeyboardInterrupt:
+    #     pass
+    # finally:
+    #     node.destroy_node()
+    #     rclpy.shutdown()
+    
+    #NOTE: add multithread to be able to wait for tf 
     rclpy.init()
     node = BearingRayNode()
+    executor = MultiThreadedExecutor(num_threads=2)
+    executor.add_node(node)
     try:
-        rclpy.spin(node)
+        executor.spin()
     except KeyboardInterrupt:
         pass
     finally:
+        executor.shutdown()
         node.destroy_node()
         rclpy.shutdown()
-
 
 if __name__ == "__main__":
     main()

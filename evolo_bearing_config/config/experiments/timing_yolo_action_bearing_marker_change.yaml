@@ -149,7 +149,7 @@ bearing_error_node:
     save_csv: true
 
     # Empty = automatic output filename.
-    output_file: "~/code/ros2_ws/src/evolo_bearing_tracking/results/timing/yolo_action_change"
+    output_file: "~/code/ros2_ws/src/evolo_bearing_tracking/results/timing/yolo_action_bearing_marker_change"
 
     # Empty = do not publish a live error topic.
     error_topic: ""
