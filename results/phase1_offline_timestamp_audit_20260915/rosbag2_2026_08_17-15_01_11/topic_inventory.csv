@@ -1,0 +1,14 @@
+bag,signal,filename,present,rows,duration_s,nominal_rate_hz,median_gap_ms,p95_gap_ms,large_gap_count,record_nonmonotonic_count,duplicate_record_count,header_available,zero_header_count,header_nonmonotonic_count,duplicate_header_count,frame_ids,content
+rosbag2_2026_08_17-15_01_11,Camera image,evolo_sensors_gimbal_camera_camera_image_raw.parquet,False,0,,,,,0,0,0,False,0,0,0,,missing
+rosbag2_2026_08_17-15_01_11,YOLO detections,yolo_detections.parquet,True,722,87.609816022,8.22967143109794,75.748834,123.750617,3,0,0,True,0,0,0,evolo_camera_frame,112/722 messages contain detections; 0 contain a tracked ID
+rosbag2_2026_08_17-15_01_11,YOLO tracking,yolo_tracking.parquet,True,723,87.687773336,8.233759081023267,76.49375900000001,142.4765367,3,0,0,True,0,4,0,evolo_camera_frame,91/723 messages contain detections; 91 contain a tracked ID
+rosbag2_2026_08_17-15_01_11,Selected target,yolo_target.parquet,True,724,87.690463217,8.244910261345689,76.754058,140.75377229999998,3,0,0,True,0,4,0,evolo_camera_frame,90/724 messages contain detections; 90 contain a tracked ID
+rosbag2_2026_08_17-15_01_11,Tracked POI,evolo_gimbal_camera_tracked_poi_image.parquet,True,90,40.770829107,2.182933287091762,106.434862,261.9315158,2,0,0,True,0,0,0,evolo/z1_camera_link,present
+rosbag2_2026_08_17-15_01_11,Published bearing,evolo_gimbal_camera_target_bearing_marker.parquet,False,0,,,,,0,0,0,False,0,0,0,,missing
+rosbag2_2026_08_17-15_01_11,GCU feedback,evolo_gimbal_camera_gimbal_gcu_fb.parquet,True,4300,87.791604214,48.96823606868827,19.896584,31.983073299999997,8,0,0,False,0,0,0,,present
+rosbag2_2026_08_17-15_01_11,Gimbal joint state,evolo_joint_states.parquet,True,885,87.699444771,10.07988137562664,99.954293,108.6609783,0,0,0,True,0,0,0,,present
+rosbag2_2026_08_17-15_01_11,Evolo odometry,evolo_smarc_odom.parquet,True,886,87.7576383,10.084592260500703,100.039557,108.50934360000001,0,0,0,True,0,0,0,evolo/odom,present
+rosbag2_2026_08_17-15_01_11,Dynamic TF,tf.parquet,True,4486,87.760739801,51.10485634202568,7.434695,50.0493002,1610,0,0,True,0,0,3518,"base_footprint, evolo/base_link, evolo/map, evolo/odom, evolo/z1_base_link, evolo/z1_global_camera_link, evolo/z1_global_optical_frame, evolo/z1_pitch_link, evolo/z1_roll_link, evolo/z1_yaw_link",5367 nested transforms
+rosbag2_2026_08_17-15_01_11,Static TF,tf_static.parquet,True,179,87.547169468,2.033189663145672,18.570115,1010.4302845999999,88,0,0,True,0,0,358,"evolo/base_link, evolo/lidar_link, evolo/map, evolo/odom, evolo/z1_base_link, evolo/z1_camera_link, evolo/z1_optical_frame, evolo/z1_pitch_link, os_imu, os_lidar, os_sensor, utm, utm_34_V",361 nested transforms
+rosbag2_2026_08_17-15_01_11,Tender WARAPS position,smarcduino_waraps_sensor_position.parquet,True,69,86.7072494,0.7842481507665033,1283.7697425000001,1319.6131314499999,0,0,0,False,0,0,0,,69/69 messages contain latitude and longitude
+rosbag2_2026_08_17-15_01_11,LiDAR truth,bounding_boxes_corrected.parquet,False,0,,,,,0,0,0,False,0,0,0,,missing

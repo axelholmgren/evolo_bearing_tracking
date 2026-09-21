@@ -13,6 +13,7 @@ import tf2_geometry_msgs  # unused by name, registers PointStamped for Buffer.tr
 from geographic_msgs.msg import GeoPoint
 from rclpy.duration import Duration
 from rclpy.node import Node
+from rclpy.qos import DurabilityPolicy, QoSProfile
 from smarc_utilities.georef_utils import convert_latlon_to_utm
 from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
@@ -47,10 +48,15 @@ class FixedPositionMarkerNode(Node):
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
         self.marker_publisher = self.create_publisher(
-            Marker, self.get_parameter("marker_topic").value, qos_profile=10
+            Marker,
+            self.get_parameter("marker_topic").value,
+            QoSProfile(
+                depth=1,
+                durability=DurabilityPolicy.TRANSIENT_LOCAL,
+            ),
         )
 
-        # republished on a timer so rviz picks it up whenever it connects
+        # Retry until TF is available, then retain the marker through QoS.
         self.timer = self.create_timer(PUBLISH_PERIOD_S, self.publish_marker)
 
         self.get_logger().info(
@@ -89,6 +95,7 @@ class FixedPositionMarkerNode(Node):
         ).to_msg()  # 0 = never expires, the point cannot move
 
         self.marker_publisher.publish(marker)
+        self.timer.cancel()
 
 
 def main():

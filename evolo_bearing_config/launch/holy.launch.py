@@ -98,9 +98,6 @@ def _launch_experiment(context):
         "start_waraps_marker": _bool(
             holy.get("waraps_marker", False)
         ),
-        "start_lidar_marker": _bool(
-            holy.get("lidar_marker", False)
-        ),
     }
 
     if any(
@@ -108,7 +105,6 @@ def _launch_experiment(context):
             holy.get("fixed_marker", False),
             holy.get("smarcduino_marker", False),
             holy.get("waraps_marker", False),
-            holy.get("lidar_marker", False),
         ]
     ):
         actions.append(

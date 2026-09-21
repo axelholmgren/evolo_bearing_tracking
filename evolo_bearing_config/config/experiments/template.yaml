@@ -26,7 +26,6 @@ holy:
     fixed_marker: false
     smarcduino_marker: false
     waraps_marker: false
-    lidar_marker: false
 
     # LiDAR preprocessing + clustering + bbox tracking
     lidar_boxes: false
@@ -187,7 +186,4 @@ smarcduino_position_marker_node:
   ros__parameters: {}
 
 smarcduino_waraps_position_marker_node:
-  ros__parameters: {}
-
-lidar_position_marker_node:
   ros__parameters: {}

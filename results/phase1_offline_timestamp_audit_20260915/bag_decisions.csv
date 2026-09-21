@@ -1,0 +1,4 @@
+bag,decision,reason
+rosbag2_2026_08_17-12_20_02,exploratory only,raw camera images are absent; published bearing output is absent; LiDAR truth is absent; GCU feedback has no device/header timestamp; WARAPS position has no measurement header.
+rosbag2_2026_08_17-15_01_11,exploratory only,raw camera images are absent; published bearing output is absent; LiDAR truth is absent; GCU feedback has no device/header timestamp; WARAPS position has no measurement header.
+rosbag2_2026_08_17-15_02_44,exploratory only,raw camera images are absent; published bearing output is absent; LiDAR truth is absent; GCU feedback has no device/header timestamp; WARAPS position has no measurement header.

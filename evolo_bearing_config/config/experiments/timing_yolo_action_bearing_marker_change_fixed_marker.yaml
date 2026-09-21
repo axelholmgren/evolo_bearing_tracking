@@ -16,7 +16,6 @@ holy:
     fixed_marker: true
     smarcduino_marker: false
     waraps_marker: false
-    lidar_marker: false
 
     # LiDAR preprocessing + clustering + bbox tracking
     lidar_boxes: false
@@ -42,9 +41,10 @@ holy:
     
     clock: true
     replay_rate: 1.0
-    start_offset: 62
+    start_offset: 0
     # Absolute bag time in seconds; null plays to the end.
-    stop_time: 145
+    stop_time: null
+    # want to plot between 62 and 145 of ros time
 
 
 # ================================================================
@@ -179,7 +179,4 @@ smarcduino_position_marker_node:
   ros__parameters: {}
 
 smarcduino_waraps_position_marker_node:
-  ros__parameters: {}
-
-lidar_position_marker_node:
   ros__parameters: {}

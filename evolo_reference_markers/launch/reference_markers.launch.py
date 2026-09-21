@@ -28,10 +28,6 @@ def generate_launch_description():
                 "start_waraps_marker",
                 default_value="true",
             ),
-            DeclareLaunchArgument(
-                "start_lidar_marker",
-                default_value="true",
-            ),
             Node(
                 package="evolo_reference_markers",
                 executable="fixed_position_marker_node",
@@ -59,16 +55,6 @@ def generate_launch_description():
                 output="screen",
                 condition=IfCondition(
                     LaunchConfiguration("start_waraps_marker")
-                ),
-                parameters=[params_file],
-            ),
-            Node(
-                package="evolo_reference_markers",
-                executable="lidar_position_marker_node",
-                name="lidar_position_marker_node",
-                output="screen",
-                condition=IfCondition(
-                    LaunchConfiguration("start_lidar_marker")
                 ),
                 parameters=[params_file],
             ),

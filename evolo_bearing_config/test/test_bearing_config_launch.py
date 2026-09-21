@@ -88,7 +88,6 @@ def test_template_has_launch_settings():
         "fixed_marker",
         "smarcduino_marker",
         "waraps_marker",
-        "lidar_marker",
         "lidar_boxes",
         "rviz",
         "rosbag",
