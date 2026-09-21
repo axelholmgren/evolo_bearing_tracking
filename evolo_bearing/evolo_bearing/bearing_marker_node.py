@@ -5,23 +5,20 @@ from rclpy.duration import Duration
 from rclpy.executors import MultiThreadedExecutor  # NOTE: for waiting on tf
 from rclpy.node import Node
 from rclpy.time import Time
+from std_msgs.msg import Bool
 from tf2_geometry_msgs import do_transform_vector3
 from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 from visualization_msgs.msg import Marker
-from z1_pro_msgs.msg import Gcudata
-
-from evolo_gimbal_calibration.gimbal_yaw_correction import correct_yaw
-
-from .bearing_math import rotate_bearing_xy
-
 # WORLD_FRAME = "evolo/map"
 WORLD_FRAME = "evolo/odom"
 RAY_LENGTH = 300  # Arbitrary ray length for visualization
-MARKER_COLOR_CORRECTION_DISABLED = (1.0, 0.2, 0.6)
-MARKER_COLOR_CORRECTION_INVALID = (1.0, 0.0, 0.0)
-MARKER_COLOR_YAW_CORRECTION_ACTIVE = (0.0, 1.0, 0.0)
+CORRECTED_CAMERA_FRAME = "evolo/z1_camera_corrected_link"
+CORRECTION_VALID_TOPIC = "/evolo/gimbal_camera/yaw_correction_valid"
+MARKER_COLOR_RAW = (1.0, 0.2, 0.6)
+MARKER_COLOR_INVALID = (1.0, 0.0, 0.0)
+MARKER_COLOR_VALID = (0.0, 1.0, 0.0)
 
 
 class BearingRayNode(Node):
@@ -44,14 +41,9 @@ class BearingRayNode(Node):
         self.marker_publisher = self.create_publisher(
             Marker, "/evolo/gimbal_camera/target_bearing_marker", qos_profile=10
         )
-        self.declare_parameter(
-            "gimbal_gcu_feedback_topic", "/evolo/gimbal_camera/gimbal_gcu_fb"
-        )
-        self.declare_parameter("apply_yaw_correction", True)
-        self.declare_parameter("yaw_correction_mode", "absolute")
-        self.declare_parameter("negate_yaw_correction", False)
-        self.yaw_correction_valid = False
-        self.yaw_correction_deg = 0.0
+        self.declare_parameter("camera_frame", "evolo/z1_camera_link")
+        self.camera_frame = self.get_parameter("camera_frame").value
+        self.correction_valid = False
 
         self.subscription = self.create_subscription(
             msg_type=QuaternionStamped,
@@ -59,31 +51,19 @@ class BearingRayNode(Node):
             callback=self.poi_callback,
             qos_profile=10,
         )
-        self.gimbal_subscription = self.create_subscription(
-            msg_type=Gcudata,
-            topic=self.get_parameter("gimbal_gcu_feedback_topic").value,
-            callback=self.gimbal_callback,
-            qos_profile=10,
-        )
 
-    def gimbal_callback(self, msg: Gcudata):
-        result = correct_yaw(
-            msg.relative_yaw,
-            mode=self.get_parameter("yaw_correction_mode").value,
-            negate=self.get_parameter("negate_yaw_correction").value,
-        )
-        self.yaw_correction_valid = bool(result.valid)
-        self.yaw_correction_deg = (
-            float(result.yaw_deg - msg.relative_yaw)
-            if self.yaw_correction_valid
-            else 0.0
-        )
+        if self.camera_frame == CORRECTED_CAMERA_FRAME:
+            self.create_subscription(
+                Bool,
+                CORRECTION_VALID_TOPIC,
+                self.correction_valid_callback,
+                10,
+            )
+
+    def correction_valid_callback(self, msg):
+        self.correction_valid = msg.data
 
     def poi_callback(self, msg: QuaternionStamped):
-        correction_active = (
-            self.get_parameter("apply_yaw_correction").value
-            and self.yaw_correction_valid
-        )
         try:
             # transform = self.tf_buffer.lookup_transform(
             #     target_frame=WORLD_FRAME,
@@ -98,14 +78,14 @@ class BearingRayNode(Node):
             #  ) #NOTE perserve time
             transform = self.tf_buffer.lookup_transform(
                 target_frame=WORLD_FRAME,
-                source_frame=msg.header.frame_id,
+                source_frame=self.camera_frame,
                 time=Time.from_msg(msg.header.stamp),
                 timeout=Duration(seconds=0.15),
             )  # NOTE wait for tf
 
         except TransformException as ex:
             self.get_logger().info(
-                f"Could not transform {WORLD_FRAME} to {msg.header.frame_id}: {ex}"
+                f"Could not transform {WORLD_FRAME} to {self.camera_frame}: {ex}"
             )
             return
 
@@ -130,21 +110,11 @@ class BearingRayNode(Node):
         target_frame_direction = do_transform_vector3(forward, offset_transform)
         bearing_vector = do_transform_vector3(target_frame_direction, transform)
 
-        bearing_x = bearing_vector.vector.x
-        bearing_y = bearing_vector.vector.y
-        bearing_z = bearing_vector.vector.z
-        if correction_active:
-            bearing_x, bearing_y = rotate_bearing_xy(
-                bearing_x,
-                bearing_y,
-                self.yaw_correction_deg,
-            )
-
         end_point = Point(
-            x=origin.x + bearing_x * RAY_LENGTH,
-            y=origin.y + bearing_y * RAY_LENGTH,
+            x=origin.x + bearing_vector.vector.x * RAY_LENGTH,
+            y=origin.y + bearing_vector.vector.y * RAY_LENGTH,
             # z=0,
-            z=origin.z + bearing_z * RAY_LENGTH,
+            z=origin.z + bearing_vector.vector.z * RAY_LENGTH,
         )
 
         # Populate marker
@@ -159,12 +129,13 @@ class BearingRayNode(Node):
         marker.scale.y = 1.0  # point width
         marker.scale.z = 1.0  # point length
         marker.color.a = 1.0
-        if not self.get_parameter("apply_yaw_correction").value:
-            color = MARKER_COLOR_CORRECTION_DISABLED
-        elif correction_active:
-            color = MARKER_COLOR_YAW_CORRECTION_ACTIVE
-        else:
-            color = MARKER_COLOR_CORRECTION_INVALID
+        color = (
+            MARKER_COLOR_RAW
+            if self.camera_frame != CORRECTED_CAMERA_FRAME
+            else MARKER_COLOR_VALID
+            if self.correction_valid
+            else MARKER_COLOR_INVALID
+        )
         marker.color.r, marker.color.g, marker.color.b = color
         marker.lifetime = Duration(seconds=1).to_msg()
 

@@ -54,6 +54,23 @@ def _launch_experiment(context):
     # Bearing
     bearing_ray = holy.get("bearing_ray", False)
     bearing_ray_ids = holy.get("bearing_ray_ids", False)
+    corrected_camera_tf = holy.get("corrected_camera_tf", False)
+    camera_frame = (
+        "evolo/z1_camera_corrected_link"
+        if corrected_camera_tf
+        else "evolo/z1_camera_link"
+    )
+
+    if corrected_camera_tf:
+        actions.append(
+            Node(
+                package="evolo_gimbal_calibration",
+                executable="corrected_camera_tf_node",
+                name="corrected_camera_tf_node",
+                output="screen",
+                parameters=[str(config_path)],
+            )
+        )
 
     if bearing_ray or bearing_ray_ids:
         actions.append(
@@ -66,6 +83,7 @@ def _launch_experiment(context):
                     "start_bearing_ray_ids": _bool(
                         bearing_ray_ids
                     ),
+                    "camera_frame": camera_frame,
                     "output_topic": holy.get(
                         "bearing_output_topic",
                         BEARING_TOPIC,

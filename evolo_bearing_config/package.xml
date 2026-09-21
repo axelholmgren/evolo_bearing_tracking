@@ -25,6 +25,7 @@
   <exec_depend>rviz2</exec_depend>
 
   <exec_depend>evolo_bearing</exec_depend>
+  <exec_depend>evolo_gimbal_calibration</exec_depend>
   <exec_depend>evolo_reference_markers</exec_depend>
   <exec_depend>evolo_bearing_error</exec_depend>
 

@@ -29,10 +29,9 @@ def test_bearing_launch_contains_bearing_nodes_and_track_ids_argument():
 
     assert len([action for action in description.entities if isinstance(action, Node)]) == 2
     assert _argument_names(description) == {
-        "use_sim_time",
-        "apply_yaw_correction",
-        "yaw_correction_mode",
-        "negate_yaw_correction",
-        "track_ids",
+        "params_file",
+        "camera_frame",
+        "start_bearing_ray",
+        "start_bearing_ray_ids",
         "output_topic",
     }

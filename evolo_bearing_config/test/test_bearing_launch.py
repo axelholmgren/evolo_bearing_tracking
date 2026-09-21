@@ -5,7 +5,7 @@ from launch.actions import DeclareLaunchArgument
 from launch_ros.actions import Node
 
 
-_LAUNCH_DIR = Path(__file__).parents[1] / "launch"
+_LAUNCH_DIR = Path(__file__).parents[2] / "evolo_bearing" / "launch"
 
 
 def _load(name):
@@ -44,6 +44,7 @@ def test_bearing_launch():
 
     assert arguments == {
         "params_file",
+        "camera_frame",
         "start_bearing_ray",
         "start_bearing_ray_ids",
         "output_topic",

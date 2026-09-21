@@ -17,26 +17,23 @@ from geometry_msgs.msg import Point, Vector3, Vector3Stamped
 from rclpy.duration import Duration
 from rclpy.node import Node
 from rclpy.time import Time
+from std_msgs.msg import Bool
 from tf2_geometry_msgs import do_transform_vector3
 from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 from visualization_msgs.msg import Marker
 from yolo_msgs.msg import DetectionArray
-from z1_pro_msgs.msg import Gcudata
-
-from evolo_gimbal_calibration.gimbal_yaw_correction import correct_yaw
-
-from .bearing_math import rotate_bearing_xy
 
 WORLD_FRAME = "evolo/odom"
-CAMERA_FRAME = (
-    "evolo/z1_camera_link"  # /yolo/tracking's own frame_id is not in the tf tree
-)
+CAMERA_FRAME = "evolo/z1_camera_link"
 CAMERA_APERTURE = 57.1  # same value yolo_action.py uses
 RAY_LENGTH = 300
-MARKER_COLOR_DEFAULT = (1.0, 0.0, 1.0)
-MARKER_COLOR_YAW_CORRECTION_ACTIVE = (0.0, 1.0, 0.0)
+CORRECTED_CAMERA_FRAME = "evolo/z1_camera_corrected_link"
+CORRECTION_VALID_TOPIC = "/evolo/gimbal_camera/yaw_correction_valid"
+MARKER_COLOR_RAW = (1.0, 0.2, 0.6)
+MARKER_COLOR_INVALID = (1.0, 0.0, 0.0)
+MARKER_COLOR_VALID = (0.0, 1.0, 0.0)
 
 
 class BearingRayIdsNode(Node):
@@ -50,6 +47,9 @@ class BearingRayIdsNode(Node):
         super().__init__("bearing_ray_ids_node")
 
         self.declare_parameter("track_ids", [44, 68, 99])
+        self.declare_parameter("camera_frame", CAMERA_FRAME)
+        self.camera_frame = self.get_parameter("camera_frame").value
+        self.correction_valid = False
         self.track_ids = {str(i) for i in self.get_parameter("track_ids").value}
         self.marker_ids = {
             track_id: index
@@ -62,68 +62,40 @@ class BearingRayIdsNode(Node):
         self.marker_publisher = self.create_publisher(
             Marker, "/evolo/gimbal_camera/selected_bearing_marker", qos_profile=10
         )
-        self.declare_parameter(
-            "gimbal_gcu_feedback_topic", "/evolo/gimbal_camera/gimbal_gcu_fb"
-        )
-        self.declare_parameter("apply_yaw_correction", True)
-        self.declare_parameter("yaw_correction_mode", "absolute")
-        self.declare_parameter("negate_yaw_correction", False)
-        self.yaw_correction_valid = False
-        self.yaw_correction_deg = 0.0
-
         self.subscription = self.create_subscription(
             msg_type=DetectionArray,
             topic="/yolo/tracking",
             callback=self.tracking_callback,
             qos_profile=10,
         )
-        self.gimbal_subscription = self.create_subscription(
-            msg_type=Gcudata,
-            topic=self.get_parameter("gimbal_gcu_feedback_topic").value,
-            callback=self.gimbal_callback,
-            qos_profile=10,
-        )
-
+        if self.camera_frame == CORRECTED_CAMERA_FRAME:
+            self.create_subscription(
+                Bool,
+                CORRECTION_VALID_TOPIC,
+                self.correction_valid_callback,
+                10,
+            )
         self.get_logger().info(
             f"Pointing at track ids: {sorted(self.track_ids, key=int)}"
         )
 
-    def gimbal_callback(self, msg: Gcudata):
-        result = correct_yaw(
-            msg.relative_yaw,
-            mode=self.get_parameter("yaw_correction_mode").value,
-            negate=self.get_parameter("negate_yaw_correction").value,
-        )
-        self.yaw_correction_valid = bool(result.valid)
-        self.yaw_correction_deg = (
-            float(result.yaw_deg - msg.relative_yaw)
-            if self.yaw_correction_valid
-            else 0.0
-        )
+    def correction_valid_callback(self, msg):
+        self.correction_valid = msg.data
 
     def tracking_callback(self, msg: DetectionArray):
-        correction_active = (
-            self.get_parameter("apply_yaw_correction").value
-            and self.yaw_correction_valid
-        )
         wanted = [det for det in msg.detections if det.id in self.track_ids]
         if not wanted:
             return  # none of the chosen ids in frame, let the marker expire
 
         try:
-            # transform = self.tf_buffer.lookup_transform(
-            #     target_frame=WORLD_FRAME,
-            #     source_frame=CAMERA_FRAME,
-            #     time=Time(),
-            # ) #NOTE original
             transform = self.tf_buffer.lookup_transform(
                 target_frame=WORLD_FRAME,
-                source_frame=CAMERA_FRAME,
+                source_frame=self.camera_frame,
                 time=Time.from_msg(msg.header.stamp),
             )
         except TransformException as ex:
             self.get_logger().info(
-                f"Could not transform {WORLD_FRAME} to {CAMERA_FRAME}: {ex}"
+                f"Could not transform {WORLD_FRAME} to {self.camera_frame}: {ex}"
             )
             return
 
@@ -170,12 +142,6 @@ class BearingRayIdsNode(Node):
                 )
             )
             bearing = do_transform_vector3(forward, transform).vector
-            if correction_active:
-                bearing.x, bearing.y = rotate_bearing_xy(
-                    bearing.x,
-                    bearing.y,
-                    self.yaw_correction_deg,
-                )
 
             end_point = Point(
                 x=origin.x + bearing.x * RAY_LENGTH,
@@ -204,9 +170,11 @@ class BearingRayIdsNode(Node):
             marker.scale.z = 1.0  # head length
             marker.color.a = 1.0
             color = (
-                MARKER_COLOR_YAW_CORRECTION_ACTIVE
-                if correction_active
-                else MARKER_COLOR_DEFAULT
+                MARKER_COLOR_RAW
+                if self.camera_frame != CORRECTED_CAMERA_FRAME
+                else MARKER_COLOR_VALID
+                if self.correction_valid
+                else MARKER_COLOR_INVALID
             )
             marker.color.r, marker.color.g, marker.color.b = color
             marker.lifetime = Duration(

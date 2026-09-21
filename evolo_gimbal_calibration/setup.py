@@ -14,6 +14,12 @@ setup(
         (f"share/{package_name}", ["package.xml"]),
     ],
     install_requires=["setuptools"],
+    entry_points={
+        "console_scripts": [
+            "corrected_camera_tf_node = "
+            "evolo_gimbal_calibration.corrected_camera_tf_node:main",
+        ],
+    },
     tests_require=["pytest"],
     zip_safe=True,
     maintainer="Axel Ericson Holmgren",

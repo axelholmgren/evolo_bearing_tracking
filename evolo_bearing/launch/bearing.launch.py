@@ -12,12 +12,17 @@ BEARING_TOPIC = "/evolo/gimbal_camera/target_bearing_marker"
 
 def generate_launch_description():
     params_file = LaunchConfiguration("params_file")
+    camera_frame = LaunchConfiguration("camera_frame")
 
     return LaunchDescription(
         [
             DeclareLaunchArgument(
                 "params_file",
                 description="ROS parameter YAML.",
+            ),
+            DeclareLaunchArgument(
+                "camera_frame",
+                default_value="evolo/z1_camera_link",
             ),
             DeclareLaunchArgument(
                 "start_bearing_ray",
@@ -39,7 +44,7 @@ def generate_launch_description():
                 condition=IfCondition(
                     LaunchConfiguration("start_bearing_ray")
                 ),
-                parameters=[params_file],
+                parameters=[params_file, {"camera_frame": camera_frame}],
                 remappings=[
                     (
                         BEARING_TOPIC,
@@ -55,7 +60,7 @@ def generate_launch_description():
                 condition=IfCondition(
                     LaunchConfiguration("start_bearing_ray_ids")
                 ),
-                parameters=[params_file],
+                parameters=[params_file, {"camera_frame": camera_frame}],
             ),
         ]
     )

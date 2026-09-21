@@ -18,6 +18,8 @@ holy:
     # Bearing
     bearing_ray: true
     bearing_ray_ids: false
+    # false = raw camera TF; true = corrected camera TF
+    corrected_camera_tf: false
 
     # Error calculation / logging
     bearing_error: false
@@ -68,21 +70,23 @@ holy:
 
 
 # ================================================================
+# CALIBRATED CAMERA TF
+# ================================================================
+
+corrected_camera_tf_node:
+  ros__parameters:
+    # absolute or shape
+    yaw_correction_mode: absolute
+    negate_yaw_correction: false
+
+
+# ================================================================
 # BEARING RAY
 # ================================================================
 
 bearing_ray_node:
   ros__parameters:
-
-    gimbal_gcu_feedback_topic: /evolo/gimbal_camera/gimbal_gcu_fb
-
-    # Completely enable / disable yaw correction.
-    apply_yaw_correction: false
-
-    # absolute or shape
-    yaw_correction_mode: shape
-
-    negate_yaw_correction: false
+    {}
 
 
 # ================================================================
@@ -97,14 +101,6 @@ bearing_ray_ids_node:
       - 68
       - 99
 
-    gimbal_gcu_feedback_topic: /evolo/gimbal_camera/gimbal_gcu_fb
-
-    apply_yaw_correction: false
-
-    # absolute or shape
-    yaw_correction_mode: shape
-
-    negate_yaw_correction: false
 
 
 # ================================================================
