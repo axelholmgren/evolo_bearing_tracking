@@ -13,6 +13,11 @@ from tf2_ros import (
     TransformException,
     TransformListener,
 )
+from tf_transformations import (
+    euler_from_quaternion,
+    quaternion_from_euler,
+    quaternion_multiply,
+)
 
 from .gimbal_yaw_correction import correct_yaw
 
@@ -20,32 +25,32 @@ from .gimbal_yaw_correction import correct_yaw
 CORRECTION_VALID_TOPIC = "/evolo/gimbal_camera/yaw_correction_valid"
 
 
-def yaw_from_quaternion(q):
-    return math.atan2(
-        2.0 * (q.w * q.z + q.x * q.y),
-        1.0 - 2.0 * (q.y * q.y + q.z * q.z),
-    )
-
-
-def yaw_quaternion(yaw):
-    return Quaternion(
-        z=math.sin(yaw / 2.0),
-        w=math.cos(yaw / 2.0),
-    )
-
-
-def multiply_quaternions(left, right):
-    return Quaternion(
-        x=left.w * right.x + left.x * right.w + left.y * right.z
-        - left.z * right.y,
-        y=left.w * right.y - left.x * right.z + left.y * right.w
-        + left.z * right.x,
-        z=left.w * right.z + left.x * right.y - left.y * right.x
-        + left.z * right.w,
-        w=left.w * right.w - left.x * right.x - left.y * right.y
-        - left.z * right.z,
-    )
-
+# Replaced by tf_transformations above. Retained for comparison.
+# def yaw_from_quaternion(q):
+#     return math.atan2(
+#         2.0 * (q.w * q.z + q.x * q.y),
+#         1.0 - 2.0 * (q.y * q.y + q.z * q.z),
+#     )
+#
+#
+# def yaw_quaternion(yaw):
+#     return Quaternion(
+#         z=math.sin(yaw / 2.0),
+#         w=math.cos(yaw / 2.0),
+#     )
+#
+#
+# def multiply_quaternions(left, right):
+#     return Quaternion(
+#         x=left.w * right.x + left.x * right.w + left.y * right.z
+#         - left.z * right.y,
+#         y=left.w * right.y - left.x * right.z + left.y * right.w
+#         + left.z * right.x,
+#         z=left.w * right.z + left.x * right.y - left.y * right.x
+#         + left.z * right.w,
+#         w=left.w * right.w - left.x * right.x - left.y * right.y
+#         - left.z * right.z,
+#     )
 
 class CalibratedCameraTFNode(Node):
     """
@@ -125,9 +130,15 @@ class CalibratedCameraTFNode(Node):
         except TransformException:
             return
 
+        raw_rotation = base_to_yaw.transform.rotation
         raw_yaw_deg = math.degrees(
-            yaw_from_quaternion(base_to_yaw.transform.rotation)
+            euler_from_quaternion(
+                [raw_rotation.x, raw_rotation.y, raw_rotation.z, raw_rotation.w]
+            )[2]
         )
+        # raw_yaw_deg = math.degrees(
+        #     yaw_from_quaternion(base_to_yaw.transform.rotation)
+        # )
 
         result = correct_yaw(
             raw_yaw_deg,
@@ -143,7 +154,8 @@ class CalibratedCameraTFNode(Node):
             else 0.0
         )
 
-        delta_rotation = yaw_quaternion(delta_yaw)
+        delta_rotation = quaternion_from_euler(0.0, 0.0, delta_yaw)
+        # delta_rotation = yaw_quaternion(delta_yaw)
         translation = yaw_to_camera.transform.translation
 
         corrected = TransformStamped()
@@ -162,10 +174,26 @@ class CalibratedCameraTFNode(Node):
         )
         corrected.transform.translation.z = translation.z
 
-        corrected.transform.rotation = multiply_quaternions(
+        camera_rotation = yaw_to_camera.transform.rotation
+        corrected_rotation = quaternion_multiply(
             delta_rotation,
-            yaw_to_camera.transform.rotation,
+            [
+                camera_rotation.x,
+                camera_rotation.y,
+                camera_rotation.z,
+                camera_rotation.w,
+            ],
         )
+        corrected.transform.rotation = Quaternion(
+            x=corrected_rotation[0],
+            y=corrected_rotation[1],
+            z=corrected_rotation[2],
+            w=corrected_rotation[3],
+        )
+        # corrected.transform.rotation = multiply_quaternions(
+        #     delta_rotation,
+        #     yaw_to_camera.transform.rotation,
+        # )
 
         self.tf_broadcaster.sendTransform(corrected)
 
