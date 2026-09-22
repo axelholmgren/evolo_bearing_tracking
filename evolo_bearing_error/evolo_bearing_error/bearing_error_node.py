@@ -61,6 +61,7 @@ class BearingErrorNode(Node):
         self.declare_parameter("lidar_box_id", 0)
         self.declare_parameter("yaw_correction_mode", "absolute")
         self.declare_parameter("negate_yaw_correction", False)
+        self.declare_parameter("extend_yaw_correction", False)
         self.declare_parameter(
             "gimbal_gcu_feedback_topic", "/evolo/gimbal_camera/gimbal_gcu_fb"
         )
@@ -194,6 +195,7 @@ class BearingErrorNode(Node):
             self.gimbal_yaw_deg,
             mode=self.get_parameter("yaw_correction_mode").value,
             negate=self.get_parameter("negate_yaw_correction").value,
+            extend=self.get_parameter("extend_yaw_correction").value,
         )
         self.corrected_yaw_deg = result.yaw_deg
         self.yaw_correction_valid = result.valid

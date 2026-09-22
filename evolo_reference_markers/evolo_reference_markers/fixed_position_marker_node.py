@@ -37,12 +37,14 @@ class FixedPositionMarkerNode(Node):
         self.declare_parameter("longitude", 18.2146923)
         self.declare_parameter("altitude", 0.0)
         self.declare_parameter("marker_topic", "/fixed_position_marker")
+        self.declare_parameter("world_frame", WORLD_FRAME)
 
         self.geo_point = GeoPoint(
             latitude=self.get_parameter("latitude").value,
             longitude=self.get_parameter("longitude").value,
             altitude=self.get_parameter("altitude").value,
         )
+        self.world_frame = self.get_parameter("world_frame").value
 
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
@@ -56,7 +58,7 @@ class FixedPositionMarkerNode(Node):
             ),
         )
 
-        # Retry until TF is available, then retain the marker through QoS.
+        # Republish so time-sensitive consumers keep the fixed truth fresh.
         self.timer = self.create_timer(PUBLISH_PERIOD_S, self.publish_marker)
 
         self.get_logger().info(
@@ -67,18 +69,18 @@ class FixedPositionMarkerNode(Node):
         utm_point = convert_latlon_to_utm(self.geo_point)
 
         try:
-            map_point = self.tf_buffer.transform(utm_point, WORLD_FRAME)
+            map_point = self.tf_buffer.transform(utm_point, self.world_frame)
 
         except TransformException as ex:
             self.get_logger().warn(
-                f"Could not transform {utm_point.header.frame_id} to {WORLD_FRAME}: {ex}",
+                f"Could not transform {utm_point.header.frame_id} to {self.world_frame}: {ex}",
                 throttle_duration_sec=5.0,
             )
             return
 
         # Populate marker
         marker = Marker()
-        marker.header.frame_id = WORLD_FRAME
+        marker.header.frame_id = self.world_frame
         marker.header.stamp = self.get_clock().now().to_msg()
         marker.type = Marker.SPHERE
         marker.action = Marker.ADD
@@ -95,7 +97,6 @@ class FixedPositionMarkerNode(Node):
         ).to_msg()  # 0 = never expires, the point cannot move
 
         self.marker_publisher.publish(marker)
-        self.timer.cancel()
 
 
 def main():

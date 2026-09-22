@@ -19,13 +19,13 @@ holy:
     bearing_ray: true
     bearing_ray_ids: false
     # false = raw camera TF; true = corrected camera TF
-    corrected_camera_tf: false
+    corrected_camera_tf: true
 
     # Error calculation / logging
-    bearing_error: false
+    bearing_error: true
 
     # Reference markers
-    fixed_marker: false
+    fixed_marker: true
     smarcduino_marker: false
     waraps_marker: false
 
@@ -36,7 +36,7 @@ holy:
     rviz: true
 
     # Rosbag replay
-    rosbag: false
+    rosbag: true
 
 
     # ------------------------------------------------------------
@@ -49,7 +49,7 @@ holy:
     rviz_config: ""
 
     # Required when rosbag: true.
-    bag_path: ""
+    bag_path: "~/ros_logs/AXL/CAM/rosbag2_2026_08_17-15_02_44/"
 
     replay_rate: 1.0
     start_offset: 0.0
@@ -66,7 +66,7 @@ holy:
 
     # false for live operation
     # true for rosbag playback with --clock
-    use_sim_time: false
+    use_sim_time: true
 
 
 # ================================================================
@@ -77,9 +77,9 @@ corrected_camera_tf_node:
   ros__parameters:
     # absolute (current) or shape (curve only)
     yaw_correction_mode: absolute
-    negate_yaw_correction: false
+    negate_yaw_correction: true
     # false = no correction outside the LUT; true = hold nearest endpoint.
-    extend_yaw_correction: false
+    extend_yaw_correction: true
 
 
 # ================================================================
@@ -140,9 +140,9 @@ bearing_error_node:
     # Correction metadata
     # ------------------------------------------------------------
 
-    yaw_correction_mode: shape
-    negate_yaw_correction: true
-    extend_yaw_correction: false
+    yaw_correction_mode: absolute
+    negate_yaw_correction: false
+    extend_yaw_correction: true
 
     gimbal_gcu_feedback_topic: /evolo/gimbal_camera/gimbal_gcu_fb
 
@@ -157,7 +157,7 @@ bearing_error_node:
     save_csv: true
 
     # Empty = automatic output filename.
-    output_file: ""
+    output_file: "fixed_object_extended_curve.csv"
 
     # Empty = do not publish a live error topic.
     error_topic: ""

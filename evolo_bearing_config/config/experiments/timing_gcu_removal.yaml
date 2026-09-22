@@ -154,7 +154,7 @@ bearing_error_node:
     save_csv: true
 
     # Empty = automatic output filename.
-    output_file: "/home/axelholmgren/code/ros2_ws/src/evolo_bearing_tracking/results/timing/timing_gcu_removal.csv"
+    output_file: "/home/axelholmgren/code/ros2_ws/src/evolo_bearing_tracking/results/timing/timing_gcu_removal_44.8_deg.csv"
 
     # Empty = do not publish a live error topic.
     error_topic: ""

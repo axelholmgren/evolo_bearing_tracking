@@ -62,6 +62,19 @@ def test_out_of_domain_yaw_is_invalid_and_unchanged(psi):
     assert np.isnan(result.sigma_deg)
 
 
+@pytest.mark.parametrize(
+    ("psi", "node"), [(-120.0, 0), (100.0, -1)]
+)
+def test_can_extend_correction_with_nearest_boundary_value(psi, node):
+    result = correct_yaw(psi, mode="shape", slew_dir=0, extend=True)
+
+    assert bool(result.valid)
+    assert result.yaw_deg == pytest.approx(psi + C_SHAPE[node])
+    assert result.sigma_deg == pytest.approx(
+        correct_yaw(PSI_NODES[node], mode="shape", slew_dir=0).sigma_deg
+    )
+
+
 def test_invalid_mode_and_slew_direction_are_rejected():
     with pytest.raises(ValueError, match="mode"):
         correct_yaw(0.0, mode="other")
@@ -69,3 +82,5 @@ def test_invalid_mode_and_slew_direction_are_rejected():
         correct_yaw(0.0, slew_dir=2)
     with pytest.raises(ValueError, match="negate"):
         correct_yaw(0.0, negate="true")
+    with pytest.raises(ValueError, match="extend"):
+        correct_yaw(0.0, extend="true")

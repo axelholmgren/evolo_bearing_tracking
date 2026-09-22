@@ -18,7 +18,8 @@ reference = tape of known circumference (36.5 cm) wrapped on a jar,
 9.863 deg per 1 cm mark.
 
 CAVEATS -- read before using the absolute mode
-  1. Validity domain is psi in [-95, +82] deg. Do not extrapolate.
+  1. Validity domain is psi in [-95, +82] deg. By default do not extrapolate;
+     callers can explicitly hold the nearest LUT boundary beyond this range.
   2. c_shape is well supported: the three sweeps agree to 0.68 deg RMS
      after removing one constant each, across a reboot and a pitch change.
   3. C_ABSOLUTE (+6.12 deg mean) is the absolute offset measured in the
@@ -73,7 +74,7 @@ class YawCorrectionResult:
 
 
 def correct_yaw(psi_deg, bias_deg=0.0, slew_dir=0, mode="absolute",
-                clip=True, use_poly=False, negate=False):
+                clip=True, use_poly=False, negate=False, extend=False):
     """Correct a reported gimbal yaw into a bearing.
 
     psi_deg   reported yaw, scalar or array [deg]
@@ -88,6 +89,8 @@ def correct_yaw(psi_deg, bias_deg=0.0, slew_dir=0, mode="absolute",
               applied outside the calibrated domain.
     negate    apply the complete correction with the opposite sign; intended
               for controlled comparison experiments.
+    extend    apply the nearest LUT boundary correction outside the calibrated
+              domain. The boundary uncertainty is used for those values.
     Returns a YawCorrectionResult with yaw_deg, sigma_deg, and valid.
     """
     if (not np.isscalar(slew_dir) or isinstance(slew_dir, (bool, np.bool_))
@@ -95,14 +98,17 @@ def correct_yaw(psi_deg, bias_deg=0.0, slew_dir=0, mode="absolute",
         raise ValueError("slew_dir must be -1 (CCW), 0 (unknown), or +1 (CW)")
 
     psi = np.asarray(psi_deg, dtype=float)
-    valid = (PSI_MIN <= psi) & (psi <= PSI_MAX)
+    if not isinstance(extend, (bool, np.bool_)):
+        raise ValueError("extend must be a boolean")
+    in_domain = (PSI_MIN <= psi) & (psi <= PSI_MAX)
+    valid = np.isfinite(psi) if extend else in_domain
     if mode not in ("shape", "absolute"):
         raise ValueError("mode must be 'shape' or 'absolute'")
     if not isinstance(negate, (bool, np.bool_)):
         raise ValueError("negate must be a boolean")
 
     correction = np.zeros_like(psi)
-    psi_valid = psi[valid]
+    psi_valid = np.clip(psi[valid], PSI_MIN, PSI_MAX)
     if use_poly:
         correction[valid] = np.polyval(POLY_COEF, psi_valid / 90.0)
     else:
@@ -121,22 +127,26 @@ def correct_yaw(psi_deg, bias_deg=0.0, slew_dir=0, mode="absolute",
 
     return YawCorrectionResult(
         yaw_deg=psi + correction,
-        sigma_deg=yaw_sigma(psi),
+        sigma_deg=yaw_sigma(psi, extend=extend),
         valid=valid,
     )
 
 
-def yaw_sigma(psi_deg, bias_known=True, slew_dir_known=True):
+def yaw_sigma(psi_deg, bias_known=True, slew_dir_known=True, extend=False):
     """1-sigma bearing uncertainty [deg] for the corrected yaw.
 
     Combine in quadrature with your image-plane and camera-to-INS terms to
     build R. Set bias_known=False if you have NOT re-zeroed since boot.
     Set slew_dir_known=False if the slew direction is unavailable.
+    Set extend=True to use the nearest boundary uncertainty outside the
+    calibrated domain.
     """
+    if not isinstance(extend, (bool, np.bool_)):
+        raise ValueError("extend must be a boolean")
     psi = np.asarray(psi_deg, dtype=float)
-    valid = (PSI_MIN <= psi) & (psi <= PSI_MAX)
+    valid = np.isfinite(psi) if extend else (PSI_MIN <= psi) & (psi <= PSI_MAX)
     sigma = np.full_like(psi, np.nan)
-    psi_valid = psi[valid]
+    psi_valid = np.clip(psi[valid], PSI_MIN, PSI_MAX)
     var = np.interp(psi_valid, PSI_NODES, SIGMA_NODE) ** 2
     var = var + QUANT_SIGMA ** 2
     if not bias_known:

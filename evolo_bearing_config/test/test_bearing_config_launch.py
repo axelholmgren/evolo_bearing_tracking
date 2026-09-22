@@ -174,6 +174,7 @@ def test_template_has_error_parameters():
         "lidar_box_id",
         "yaw_correction_mode",
         "negate_yaw_correction",
+        "extend_yaw_correction",
         "gimbal_gcu_feedback_topic",
         "bag",
         "save_csv",

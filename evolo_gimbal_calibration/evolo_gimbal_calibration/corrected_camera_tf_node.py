@@ -73,6 +73,7 @@ class CalibratedCameraTFNode(Node):
 
         self.declare_parameter("yaw_correction_mode", "absolute")
         self.declare_parameter("negate_yaw_correction", False)
+        self.declare_parameter("extend_yaw_correction", False)
 
         self.base_frame = self.get_parameter("base_frame").value
         self.yaw_frame = self.get_parameter("yaw_frame").value
@@ -86,6 +87,9 @@ class CalibratedCameraTFNode(Node):
         ).value
         self.negate_correction = self.get_parameter(
             "negate_yaw_correction"
+        ).value
+        self.extend_correction = self.get_parameter(
+            "extend_yaw_correction"
         ).value
 
         self.tf_buffer = Buffer()
@@ -144,6 +148,7 @@ class CalibratedCameraTFNode(Node):
             raw_yaw_deg,
             mode=self.correction_mode,
             negate=self.negate_correction,
+            extend=self.extend_correction,
         )
 
         valid = bool(result.valid)
