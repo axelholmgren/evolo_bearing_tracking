@@ -20,10 +20,9 @@ holy:
     bearing_ray_ids: false
     # false = raw camera TF; true = corrected camera TF
     corrected_camera_tf: true
-    camera_frame: evolo/z1_global_camera_link
 
     # Error calculation / logging
-    bearing_error: true
+    bearing_error: false
 
     # Reference markers
     fixed_marker: true

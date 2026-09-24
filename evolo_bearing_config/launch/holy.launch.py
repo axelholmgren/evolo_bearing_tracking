@@ -60,7 +60,6 @@ def _launch_experiment(context):
         if corrected_camera_tf
         else "evolo/z1_camera_link"
     )
-    camera_frame = holy.get("camera_frame", camera_frame)
 
     if corrected_camera_tf:
         actions.append(
