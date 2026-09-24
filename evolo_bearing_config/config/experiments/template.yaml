@@ -9,6 +9,13 @@
 
 
 # ================================================================
+# VERSION
+# ================================================================
+
+# Branch: 
+# Commit:
+
+# ================================================================
 # WHAT TO LAUNCH
 # ================================================================
 
@@ -77,7 +84,7 @@ corrected_camera_tf_node:
   ros__parameters:
     # absolute (current) or shape (curve only)
     yaw_correction_mode: absolute
-    negate_yaw_correction: false
+    negate_yaw_correction: true
     # false = no correction outside the LUT; true = hold nearest endpoint.
     extend_yaw_correction: false
 
@@ -154,7 +161,7 @@ bearing_error_node:
     # Used in automatic output filename generation.
     bag: ""
 
-    save_csv: true
+    save_csv: false
 
     # Empty = automatic output filename.
     output_file: ""
@@ -175,6 +182,8 @@ fixed_position_marker_node:
     altitude: 0.0
 
     marker_topic: /fixed_position_marker
+    # Must match the bearing-ray node's output frame.
+    world_frame: evolo/odom
 
 
 # ================================================================

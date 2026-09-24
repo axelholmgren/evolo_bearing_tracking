@@ -1,24 +1,15 @@
 # Evolo bearing tracking
 
-ROS 2 packages and analysis tools for the master's thesis
-*Uncertainty-Aware Bearings-Only Tracking of Maritime Targets from a
-Hydrofoiling Unmanned Surface Vessel*.
-
-The project produces world-frame bearing rays from camera detections and gimbal
-orientation, visualises them in RViz, and evaluates their error against known
-or LiDAR-derived target positions. It also includes the gimbal-yaw correction
-used by the bearing pipeline.
+ROS 2 packages for bearing tracking, yaw correction, and bearing-error analysis.
 
 ## Contents
 
-- `evolo_bearing/` — bearing-ray nodes and RViz configuration.
-- `evolo_bearing/launch/` — package-local bearing launch file.
-- `evolo_bearing_config/launch/` — higher-level Python launch files for replay and comparison runs.
-- `evolo_gimbal_calibration/` — yaw-correction model and calibration data.
-- `evolo_reference_markers/` — reference-position marker publishers.
-- `evolo_bearing_error/` — bearing-error calculation and CSV logging.
-- `analysis/` — offline plotting and analysis scripts.
-- `results/` — generated CSVs and plots; ignored by Git.
+- `evolo_bearing/` — bearing rays
+- `evolo_gimbal_calibration/` — yaw correction
+- `evolo_reference_markers/` — reference markers
+- `evolo_bearing_error/` — error calculation and CSV logging
+- `evolo_bearing_config/` — launch and experiment configs
+- `analysis/` — offline analysis
 
 ## Build
 
@@ -31,17 +22,15 @@ colcon build --packages-select evolo_gimbal_calibration evolo_bearing evolo_bear
 source install/setup.bash
 ```
 
-## Replay
+## Run
 
 ```bash
-ros2 launch evolo_bearing_config replay.launch.py bag:=<bag-directory>
+ros2 launch evolo_bearing_config holy.launch.py \
+  config:=/absolute/path/to/experiment.yaml
 ```
 
-Use `compare_derived_lidar.launch.py` to launch the LiDAR processing and
-tracking packages as part of a paired correction comparison. The smaller
-`bearing.launch.py`, `observe.launch.py`, and `compare.launch.py` files can be
-combined or run independently when more control is useful.
+Copy `evolo_bearing_config/config/experiments/template.yaml`. Set `rosbag`,
+`bag_path`, and `use_sim_time` for replay. Enable `bearing_error` to log CSV.
 
-See [the replay workflow](evolo_bearing/docs/rosbag_workflows.md) for CSV
-error logging and [the yaw-correction experiment](evolo_bearing/docs/yaw_correction_experiment.md)
-for the paired raw-versus-corrected evaluation.
+See [the rosbag workflow](evolo_bearing/docs/rosbag_workflows.md) and
+[the yaw-correction experiment](evolo_bearing/docs/yaw_correction_experiment.md).

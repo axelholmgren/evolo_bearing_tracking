@@ -1,3 +1,13 @@
+# Copy this file for each experiment.
+#
+# Example:
+#
+# cp template.yaml timing_test.yaml
+#
+# ros2 launch evolo_bearing_config holy.launch.py \
+#   config:=/absolute/path/to/timing_test.yaml
+
+
 # ================================================================
 # WHAT TO LAUNCH
 # ================================================================
@@ -8,17 +18,20 @@ holy:
     # Bearing
     bearing_ray: true
     bearing_ray_ids: false
+    # false = raw camera TF; true = corrected camera TF
+    corrected_camera_tf: true
+    camera_frame: evolo/z1_global_camera_link
 
     # Error calculation / logging
-    bearing_error: false
+    bearing_error: true
 
     # Reference markers
-    fixed_marker: false
+    fixed_marker: true
     smarcduino_marker: false
     waraps_marker: false
 
     # LiDAR preprocessing + clustering + bbox tracking
-    lidar_boxes: true
+    lidar_boxes: false
 
     # Visualization
     rviz: true
@@ -37,11 +50,12 @@ holy:
     rviz_config: ""
 
     # Required when rosbag: true.
-    bag_path: "~/ros_logs/AXL/CAM/rosbag2_2026_08_17-12_20_02/"
-    
-    clock: true
-    replay_rate: 2.0
+    bag_path: "~/ros_logs/AXL/CAM/rosbag2_2026_08_17-15_02_44/"
+
+    replay_rate: 1.0
     start_offset: 0.0
+    # Absolute bag time in seconds; null plays to the end.
+    stop_time: null
 
 
 # ================================================================
@@ -57,21 +71,25 @@ holy:
 
 
 # ================================================================
+# CALIBRATED CAMERA TF
+# ================================================================
+
+corrected_camera_tf_node:
+  ros__parameters:
+    # absolute (current) or shape (curve only)
+    yaw_correction_mode: absolute
+    negate_yaw_correction: true
+    # false = no correction outside the LUT; true = hold nearest endpoint.
+    extend_yaw_correction: true
+
+
+# ================================================================
 # BEARING RAY
 # ================================================================
 
 bearing_ray_node:
   ros__parameters:
-
-    gimbal_gcu_feedback_topic: /evolo/gimbal_camera/gimbal_gcu_fb
-
-    # Completely enable / disable yaw correction.
-    apply_yaw_correction: false
-
-    # absolute or shape
-    yaw_correction_mode: shape
-
-    negate_yaw_correction: false
+    keep_ray_history: true
 
 
 # ================================================================
@@ -80,21 +98,12 @@ bearing_ray_node:
 
 bearing_ray_ids_node:
   ros__parameters:
-    
-    
+
     track_ids:
       - 44
       - 68
       - 99
 
-    gimbal_gcu_feedback_topic: /evolo/gimbal_camera/gimbal_gcu_fb
-
-    apply_yaw_correction: false
-
-    # absolute or shape
-    yaw_correction_mode: shape
-
-    negate_yaw_correction: false
 
 
 # ================================================================
@@ -110,7 +119,7 @@ bearing_error_node:
     bearing_track_id: ""
 
     # marker or lidar_box
-    truth_source: lidar_box
+    truth_source: marker
 
 
     # ------------------------------------------------------------
@@ -132,8 +141,9 @@ bearing_error_node:
     # Correction metadata
     # ------------------------------------------------------------
 
-    yaw_correction_mode: shape
-    negate_yaw_correction: false
+    yaw_correction_mode: absolute
+    negate_yaw_correction: true
+    extend_yaw_correction: true
 
     gimbal_gcu_feedback_topic: /evolo/gimbal_camera/gimbal_gcu_fb
 
@@ -148,7 +158,7 @@ bearing_error_node:
     save_csv: true
 
     # Empty = automatic output filename.
-    output_file: "~/code/ros2_ws/src/evolo_bearing_tracking/results/timing/baseline"
+    output_file: "~/code/ros2_ws/src/evolo_bearing_tracking/results/fixed_object_extended_curve_user_offset.csv"
 
     # Empty = do not publish a live error topic.
     error_topic: ""
@@ -166,6 +176,7 @@ fixed_position_marker_node:
     altitude: 0.0
 
     marker_topic: /fixed_position_marker
+    world_frame: evolo/odom
 
 
 # ================================================================

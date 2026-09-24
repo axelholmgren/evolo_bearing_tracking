@@ -52,6 +52,7 @@ SIGMA_NODE = np.array([
      1.10])
 
 C_ABSOLUTE = 6.12      # deg, measured absolute offset -- see caveat 3
+C_USER_OFFSET = 3.53
 PSI_MIN, PSI_MAX = -95.0, 82.0
 
 HYSTERESIS = 0.79      # deg, CW readout minus CCW readout (Exp7, same session)
@@ -115,7 +116,7 @@ def correct_yaw(psi_deg, bias_deg=0.0, slew_dir=0, mode="absolute",
         correction[valid] = np.interp(psi_valid, PSI_NODES, C_SHAPE)
 
     if mode == "absolute":
-        correction[valid] = correction[valid] + C_ABSOLUTE
+        correction[valid] = correction[valid] + C_ABSOLUTE + C_USER_OFFSET
 
     # Backlash: CW readings sit HYSTERESIS deg above CCW readings, so remove
     # half of it in each direction to land on the mid-value the LUT encodes.

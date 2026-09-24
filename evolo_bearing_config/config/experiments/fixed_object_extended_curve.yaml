@@ -88,7 +88,7 @@ corrected_camera_tf_node:
 
 bearing_ray_node:
   ros__parameters:
-    {}
+    keep_ray_history: true
 
 
 # ================================================================
@@ -141,7 +141,7 @@ bearing_error_node:
     # ------------------------------------------------------------
 
     yaw_correction_mode: absolute
-    negate_yaw_correction: false
+    negate_yaw_correction: true
     extend_yaw_correction: true
 
     gimbal_gcu_feedback_topic: /evolo/gimbal_camera/gimbal_gcu_fb
@@ -157,7 +157,7 @@ bearing_error_node:
     save_csv: true
 
     # Empty = automatic output filename.
-    output_file: "fixed_object_extended_curve.csv"
+    output_file: "~/code/ros2_ws/src/evolo_bearing_tracking/results/fixed_object_extended_curve_user_offset.csv"
 
     # Empty = do not publish a live error topic.
     error_topic: ""
@@ -175,6 +175,7 @@ fixed_position_marker_node:
     altitude: 0.0
 
     marker_topic: /fixed_position_marker
+    world_frame: evolo/odom
 
 
 # ================================================================

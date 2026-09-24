@@ -43,6 +43,9 @@ class BearingRayNode(Node):
         )
         self.declare_parameter("camera_frame", "evolo/z1_camera_link")
         self.camera_frame = self.get_parameter("camera_frame").value
+        self.declare_parameter("keep_ray_history", False)
+        self.keep_ray_history = self.get_parameter("keep_ray_history").value
+        self.next_marker_id = 0
         self.correction_valid = False
 
         self.subscription = self.create_subscription(
@@ -124,8 +127,12 @@ class BearingRayNode(Node):
         marker.header.stamp = msg.header.stamp  # NOTE change to output the input stamp
         marker.type = Marker.ARROW
         marker.action = Marker.ADD
+        if self.keep_ray_history:
+            # ponytail: RViz retains every ray; cap IDs or set a lifetime if memory grows.
+            marker.id = self.next_marker_id
+            self.next_marker_id += 1
         marker.points = [origin, end_point]
-        marker.scale.x = 0.1  # ray size
+        marker.scale.x = 0.05  # ray size
         marker.scale.y = 1.0  # point width
         marker.scale.z = 1.0  # point length
         marker.color.a = 1.0
@@ -137,7 +144,7 @@ class BearingRayNode(Node):
             else MARKER_COLOR_INVALID
         )
         marker.color.r, marker.color.g, marker.color.b = color
-        marker.lifetime = Duration(seconds=1).to_msg()
+        marker.lifetime = Duration(seconds=0 if self.keep_ray_history else 1).to_msg()
 
         self.marker_publisher.publish(marker)
 

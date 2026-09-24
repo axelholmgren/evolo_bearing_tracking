@@ -17,14 +17,27 @@ def main() -> None:
         default=Path("results/plots/timing_bearing_error.png"),
         help="PNG destination (default: %(default)s)",
     )
+    parser.add_argument(
+        "--start", type=float, default=0.0, help="Start time in seconds from start"
+    )
+    parser.add_argument(
+        "--end", type=float, default=float("inf"), help="End time in seconds from start"
+    )
     args = parser.parse_args()
+    if args.end < args.start:
+        parser.error("--end must be at or after --start")
 
     fig, ax = plt.subplots(figsize=(11, 5))
     for path in args.csv:
         data = pd.read_csv(path).dropna(subset=["t", "angle_error_deg"])
         if data.empty:
             raise ValueError(f"{path}: no bearing-error rows")
-        elapsed_s = data["t"] - data["t"].iloc[0]
+        first_t = data["t"].iloc[0]
+        data = data[(data["t"] - first_t).between(args.start, args.end)]
+        if data.empty:
+            raise ValueError(f"{path}: no bearing-error rows in selected time range")
+        elapsed_s = data["t"] - first_t
+
         mean_error = data["angle_error_deg"].mean()
         mae = data["angle_error_deg"].abs().mean()
         print(
@@ -36,10 +49,7 @@ def main() -> None:
             data["angle_error_deg"],
             ".",
             ms=2,
-            label=(
-                f"{path.stem} (mean {mean_error:+.2f} deg, "
-                f"MAE {mae:.2f} deg)"
-            ),
+            label=(f"{path.stem} (mean {mean_error:+.2f} deg, " f"MAE {mae:.2f} deg)"),
         )
 
     ax.axhline(0.0, color="black", linewidth=0.8)
