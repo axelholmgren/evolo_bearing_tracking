@@ -20,6 +20,7 @@ holy:
     bearing_ray_ids: false
     # false = raw camera TF; true = corrected camera TF
     corrected_camera_tf: true
+    camera_frame: evolo/z1_global_camera_corrected_link
 
     # Error calculation / logging
     bearing_error: false
@@ -36,7 +37,7 @@ holy:
     rviz: true
 
     # Rosbag replay
-    rosbag: true
+    rosbag: false
 
 
     # ------------------------------------------------------------
@@ -51,7 +52,7 @@ holy:
     # Required when rosbag: true.
     bag_path: "~/ros_logs/AXL/CAM/rosbag2_2026_08_17-15_02_44/"
 
-    replay_rate: 1.0
+    replay_rate: 3.0
     start_offset: 0.0
     # Absolute bag time in seconds; null plays to the end.
     stop_time: null
@@ -75,6 +76,9 @@ holy:
 
 corrected_camera_tf_node:
   ros__parameters:
+    camera_frame: evolo/z1_global_camera_link
+    corrected_camera_frame: evolo/z1_global_camera_corrected_link
+    camera_tf_driven: true
     # absolute (current) or shape (curve only)
     yaw_correction_mode: absolute
     negate_yaw_correction: true

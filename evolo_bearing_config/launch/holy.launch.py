@@ -55,7 +55,7 @@ def _launch_experiment(context):
     bearing_ray = holy.get("bearing_ray", False)
     bearing_ray_ids = holy.get("bearing_ray_ids", False)
     corrected_camera_tf = holy.get("corrected_camera_tf", False)
-    camera_frame = (
+    camera_frame = holy.get("camera_frame") or (
         "evolo/z1_camera_corrected_link"
         if corrected_camera_tf
         else "evolo/z1_camera_link"

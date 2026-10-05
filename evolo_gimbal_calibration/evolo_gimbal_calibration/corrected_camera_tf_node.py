@@ -74,6 +74,7 @@ class CalibratedCameraTFNode(Node):
         self.declare_parameter("yaw_correction_mode", "absolute")
         self.declare_parameter("negate_yaw_correction", False)
         self.declare_parameter("extend_yaw_correction", False)
+        self.declare_parameter("camera_tf_driven", False)
 
         self.base_frame = self.get_parameter("base_frame").value
         self.yaw_frame = self.get_parameter("yaw_frame").value
@@ -91,6 +92,7 @@ class CalibratedCameraTFNode(Node):
         self.extend_correction = self.get_parameter(
             "extend_yaw_correction"
         ).value
+        self.camera_tf_driven = self.get_parameter("camera_tf_driven").value
 
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
@@ -107,6 +109,21 @@ class CalibratedCameraTFNode(Node):
         )
 
     def tf_callback(self, msg):
+        if self.camera_tf_driven:
+            for camera_tf in msg.transforms:
+                if camera_tf.child_frame_id != self.camera_frame:
+                    continue
+                try:
+                    base_to_yaw = self.tf_buffer.lookup_transform(
+                        self.base_frame,
+                        self.yaw_frame,
+                        Time.from_msg(camera_tf.header.stamp),
+                    )
+                except TransformException:
+                    continue
+                self.publish_corrected_transform(base_to_yaw, camera_tf)
+            return
+
         base_to_yaw = next(
             (
                 tf
@@ -122,17 +139,16 @@ class CalibratedCameraTFNode(Node):
 
         self.publish_corrected_transform(base_to_yaw)
 
-    def publish_corrected_transform(self, base_to_yaw):
-        stamp = Time.from_msg(base_to_yaw.header.stamp)
-
-        try:
-            yaw_to_camera = self.tf_buffer.lookup_transform(
-                self.yaw_frame,
-                self.camera_frame,
-                stamp,
-            )
-        except TransformException:
-            return
+    def publish_corrected_transform(self, base_to_yaw, camera_tf=None):
+        if camera_tf is None:
+            try:
+                camera_tf = self.tf_buffer.lookup_transform(
+                    self.yaw_frame,
+                    self.camera_frame,
+                    Time.from_msg(base_to_yaw.header.stamp),
+                )
+            except TransformException:
+                return
 
         raw_rotation = base_to_yaw.transform.rotation
         raw_yaw_deg = math.degrees(
@@ -161,25 +177,37 @@ class CalibratedCameraTFNode(Node):
 
         delta_rotation = quaternion_from_euler(0.0, 0.0, delta_yaw)
         # delta_rotation = yaw_quaternion(delta_yaw)
-        translation = yaw_to_camera.transform.translation
+        translation = camera_tf.transform.translation
 
         corrected = TransformStamped()
-        corrected.header.stamp = base_to_yaw.header.stamp
-        corrected.header.frame_id = self.yaw_frame
+        corrected.header.stamp = (
+            camera_tf.header.stamp
+            if self.camera_tf_driven
+            else base_to_yaw.header.stamp
+        )
+        corrected.header.frame_id = (
+            camera_tf.header.frame_id
+            if self.camera_tf_driven
+            else self.yaw_frame
+        )
         corrected.child_frame_id = self.corrected_camera_frame
 
         c = math.cos(delta_yaw)
         s = math.sin(delta_yaw)
 
         corrected.transform.translation.x = (
-            c * translation.x - s * translation.y
+            translation.x
+            if self.camera_tf_driven
+            else c * translation.x - s * translation.y
         )
         corrected.transform.translation.y = (
-            s * translation.x + c * translation.y
+            translation.y
+            if self.camera_tf_driven
+            else s * translation.x + c * translation.y
         )
         corrected.transform.translation.z = translation.z
 
-        camera_rotation = yaw_to_camera.transform.rotation
+        camera_rotation = camera_tf.transform.rotation
         corrected_rotation = quaternion_multiply(
             delta_rotation,
             [
