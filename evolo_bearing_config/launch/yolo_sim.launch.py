@@ -11,7 +11,7 @@ from pathlib import Path
 import yaml
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchContext, LaunchDescription
-from launch.actions import DeclareLaunchArgument, OpaqueFunction
+from launch.actions import DeclareLaunchArgument, ExecuteProcess, OpaqueFunction
 from launch.substitutions import LaunchConfiguration
 from launch.utilities import perform_substitutions
 from launch_ros.actions import Node
@@ -113,17 +113,38 @@ def _launch_yolo(context):
         )
     )
     # Sim gimbal loop: Unity has no Gcudata, so echo commands as feedback.
-    # evolo_bringup.sh already runs gimbal_action.py; a second copy duplicates
-    # /evolo/gimbal_camera_action_server and its "Gimbal is off" gimbal_fb.
-    nodes.append(
+    # Upstream evolo_bringup.sh SIM runs no gimbal action server; start it here.
+    # Its z1_pro_driver launch would also duplicate Unity's z1_* TF frames.
+    nodes += [
         Node(
             package="evolo_bearing",
             executable="sim_gimbal_feedback_node",
             name="sim_gimbal_feedback_node",
             output="screen",
             parameters=[str(params_file)],
-        )
-    )
+        ),
+        Node(
+            package="z1_pro_driver",
+            executable="gimbal_action.py",
+            name="gimbal_camera_action_server",
+            namespace="evolo",
+            output="screen",
+            # z1_pro_action_launch.py default; the node's own is /yolo/tracked_poi.
+            parameters=[
+                {"img_poi_topic": EVOLO_ACTION_ARGS["image_poi_output"]},
+                str(params_file),
+            ],
+        ),
+        # gimbal_action.py starts OFF; on the boat MQTT sends TRACK. send_goal
+        # waits for the server, so this fires once it is up.
+        ExecuteProcess(
+            cmd=[
+                "ros2", "action", "send_goal", "/evolo/gimbal_track_img_poi",
+                "smarc_msgs/action/BaseAction", "{goal: {data: '{}'}}",
+            ],
+            output="screen",
+        ),
+    ]
     return nodes
 
 
