@@ -8,7 +8,7 @@
 holy:
   ros__parameters:
     # false=external YOLO, true=start local simulation stack.
-    yolo: false
+    yolo: true
     # Python 3.10 venv with cached weights in models/; ~ supported.
     yolo_venv: ~/code/ros2_ws/src/smarc2/perception/smarc_yolo/yolo_ros/.venv
     # true/false: selected-target ray.
@@ -67,7 +67,7 @@ corrected_camera_tf_node:
     # Gimbal yaw TF frame.
     # yaw_frame: evolo/z1_yaw_link
     # Raw camera TF: evolo/z1_camera_link or evolo/z1_global_camera_link.
-    # camera_frame: evolo/z1_camera_link
+    camera_frame: evolo/z1_camera_link
     # Corrected output TF; custom frames also need holy.camera_frame.
     # corrected_camera_frame: evolo/z1_camera_corrected_link
     # false=trigger on yaw TF, true=on camera TF (global-camera bags).
@@ -80,10 +80,10 @@ corrected_camera_tf_node:
     # extend_yaw_correction: false
 
 # Camera frame is selected by Holy.
-# bearing_ray_node:
-  # ros__parameters:
+bearing_ray_node:
+  ros__parameters:
     # false=current ray, true=all rays (unbounded RViz history).
-    # keep_ray_history: false
+    keep_ray_history: true
     # TF wait in seconds (>=0); 0=no wait.
     # tf_timeout: 0.15
 
@@ -156,8 +156,8 @@ smarcduino_waraps_position_marker_node:
 # Commented keys follow smarc2 evolo_bringup.sh, then yolo_bringup/yolo.launch.py.
 # Image input: /evolo/sensors/gimbal_camera/camera/image_raw (fixed).
 # Requires models/yoloe-26s-seg.pt and mobileclip2_b.ts even with model overrides.
-# /yolo/yolo_node:
-  # ros__parameters:
+/yolo/yolo_node:
+  ros__parameters:
     # YOLO, World, YOLOE; action server requires World/YOLOE.
     # model_type: YOLOE
     # Weights path; relative to venv/models/.
@@ -173,7 +173,7 @@ smarcduino_waraps_position_marker_node:
     # 0=system default, 1=reliable, 2=best effort.
     # image_reliability: 2
     # Confidence threshold [0.0, 1.0].
-    # threshold: 0.5
+    threshold: 0.1
     # NMS IoU threshold [0.0, 1.0].
     # iou: 0.7
     # Positive inference height in pixels.
@@ -203,10 +203,10 @@ smarcduino_waraps_position_marker_node:
     # 0=system default, 1=reliable, 2=best effort.
     # image_reliability: 2
 
-# /evolo/yolo_action_server_node:
-  # ros__parameters:
+/evolo/yolo_action_server_node:
+  ros__parameters:
     # Prompt list, e.g. ["person", "boat", "buoy"]; [""]=no request.
-    # startup_classes: ["person", "boat", "buoy"]
+    startup_classes: ["floating object", "buoy","boat"]
     # DetectionArray input topic.
     # yolo_tracking_topic: /yolo/tracking
     # QuaternionStamped output; bearing_ray_node expects this default.

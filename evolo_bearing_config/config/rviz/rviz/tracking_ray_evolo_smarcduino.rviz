@@ -67,6 +67,8 @@ Visualization Manager:
           Value: true
         evolo/z1_camera_link:
           Value: true
+        evolo/z1_global_camera_corrected_link:
+          Value: true
         evolo/z1_global_camera_link:
           Value: true
         evolo/z1_global_optical_frame:
@@ -113,6 +115,8 @@ Visualization Manager:
                       evolo/z1_optical_frame:
                         {}
           evolo/map:
+            evolo/z1_global_camera_corrected_link:
+              {}
             evolo/z1_global_camera_link:
               evolo/z1_global_optical_frame:
                 {}
@@ -126,7 +130,7 @@ Visualization Manager:
       Enabled: true
       Name: Tracking Ray
       Namespaces:
-        {}
+        "": true
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -267,9 +271,9 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 252
+      Max Intensity: 2870
       Min Color: 0; 0; 0
-      Min Intensity: 8
+      Min Intensity: 5
       Name: PointCloud2
       Position Transformer: XYZ
       Selectable: true
@@ -285,6 +289,53 @@ Visualization Manager:
         Value: /evolo/sensors/lidar/points
       Use Fixed Frame: true
       Use rainbow: true
+      Value: true
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: MarkerArray
+      Namespaces:
+        "": true
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /state_estimator_node/estimate_markers
+      Value: true
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.10000000149011612
+      Class: rviz_default_plugins/PoseWithCovariance
+      Color: 255; 25; 0
+      Covariance:
+        Orientation:
+          Alpha: 0.5
+          Color: 255; 255; 127
+          Color Style: Unique
+          Frame: Local
+          Offset: 1
+          Scale: 1
+          Value: true
+        Position:
+          Alpha: 0.30000001192092896
+          Color: 204; 51; 204
+          Scale: 1
+          Value: true
+        Value: true
+      Enabled: true
+      Head Length: 0.30000001192092896
+      Head Radius: 0.10000000149011612
+      Name: PoseWithCovariance
+      Shaft Length: 1
+      Shaft Radius: 0.05000000074505806
+      Shape: Arrow
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /state_estimator_node/target_pose
       Value: true
   Enabled: true
   Global Options:
@@ -332,7 +383,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 80.67486572265625
+      Distance: 924.9381103515625
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -350,7 +401,7 @@ Visualization Manager:
       Pitch: 1.5697963237762451
       Target Frame: evolo/base_link
       Value: Orbit (rviz)
-      Yaw: 2.365399122238159
+      Yaw: 1.2572252750396729
     Saved: ~
 Window Geometry:
   Displays:

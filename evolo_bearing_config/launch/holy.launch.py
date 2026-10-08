@@ -51,6 +51,16 @@ def _launch_experiment(context):
 
     actions = []
 
+    # YOLO
+    if holy.get("yolo", False):
+        actions.append(
+            _include(
+                "evolo_bearing_config",
+                "yolo_sim.launch.py",
+                {"params_file": str(config_path)},
+            )
+        )
+
     # Bearing
     bearing_ray = holy.get("bearing_ray", False)
     bearing_ray_ids = holy.get("bearing_ray_ids", False)
