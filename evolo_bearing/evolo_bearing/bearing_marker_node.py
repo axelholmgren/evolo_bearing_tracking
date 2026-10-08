@@ -1,4 +1,6 @@
 import rclpy
+import math
+from evolo_msgs.msg import BearingObservation
 from geometry_msgs.msg import (Point, QuaternionStamped, Transform,
                                TransformStamped, Vector3, Vector3Stamped)
 from rclpy.duration import Duration
@@ -11,6 +13,7 @@ from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 from visualization_msgs.msg import Marker
+
 # WORLD_FRAME = "evolo/map"
 WORLD_FRAME = "evolo/odom"
 RAY_LENGTH = 300  # Arbitrary ray length for visualization
@@ -41,10 +44,19 @@ class BearingRayNode(Node):
         self.marker_publisher = self.create_publisher(
             Marker, "/evolo/gimbal_camera/target_bearing_marker", qos_profile=10
         )
+        self.observation_publisher = self.create_publisher(
+            BearingObservation,
+            "/evolo/gimbal_camera/target_bearing_observation",
+            qos_profile=10,
+        )
+
         self.declare_parameter("camera_frame", "evolo/z1_camera_link")
         self.camera_frame = self.get_parameter("camera_frame").value
         self.declare_parameter("keep_ray_history", False)
         self.keep_ray_history = self.get_parameter("keep_ray_history").value
+        self.declare_parameter("tf_timeout", 0.15)
+        self.tf_timeout = self.get_parameter("tf_timeout").value
+
         self.next_marker_id = 0
         self.correction_valid = False
 
@@ -83,12 +95,13 @@ class BearingRayNode(Node):
                 target_frame=WORLD_FRAME,
                 source_frame=self.camera_frame,
                 time=Time.from_msg(msg.header.stamp),
-                timeout=Duration(seconds=0.15),
+                timeout=Duration(seconds=self.tf_timeout),
             )  # NOTE wait for tf
 
         except TransformException as ex:
-            self.get_logger().info(
-                f"Could not transform {WORLD_FRAME} to {self.camera_frame}: {ex}"
+            self.get_logger().warning(
+                f"Dropping bearing: TF unavailable at observation time "
+                f"for {self.camera_frame} -> {WORLD_FRAME}: {ex}"
             )
             return
 
@@ -112,6 +125,17 @@ class BearingRayNode(Node):
         # offset -> target frame direction -> map frame
         target_frame_direction = do_transform_vector3(forward, offset_transform)
         bearing_vector = do_transform_vector3(target_frame_direction, transform)
+        
+        direction = bearing_vector.vector
+
+        # Add to the bearing observation message
+        observation = BearingObservation()
+        observation.header.stamp = msg.header.stamp
+        observation.header.frame_id = WORLD_FRAME
+        observation.origin = origin
+        observation.direction = direction
+        observation.bearing = math.atan2(direction.y, direction.x)
+        self.observation_publisher.publish(observation)
 
         end_point = Point(
             x=origin.x + bearing_vector.vector.x * RAY_LENGTH,
@@ -139,9 +163,7 @@ class BearingRayNode(Node):
         color = (
             MARKER_COLOR_RAW
             if self.camera_frame != CORRECTED_CAMERA_FRAME
-            else MARKER_COLOR_VALID
-            if self.correction_valid
-            else MARKER_COLOR_INVALID
+            else MARKER_COLOR_VALID if self.correction_valid else MARKER_COLOR_INVALID
         )
         marker.color.r, marker.color.g, marker.color.b = color
         marker.lifetime = Duration(seconds=0 if self.keep_ray_history else 1).to_msg()
@@ -150,7 +172,7 @@ class BearingRayNode(Node):
 
 
 def main():
-    #NOTE: original
+    # NOTE: original
     # rclpy.init()
     # node = BearingRayNode()
     # try:
@@ -160,8 +182,8 @@ def main():
     # finally:
     #     node.destroy_node()
     #     rclpy.shutdown()
-    
-    #NOTE: add multithread to be able to wait for tf 
+
+    # NOTE: add multithread to be able to wait for tf
     rclpy.init()
     node = BearingRayNode()
     executor = MultiThreadedExecutor(num_threads=2)
@@ -174,6 +196,7 @@ def main():
         executor.shutdown()
         node.destroy_node()
         rclpy.shutdown()
+
 
 if __name__ == "__main__":
     main()

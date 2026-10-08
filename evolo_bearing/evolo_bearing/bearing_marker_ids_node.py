@@ -49,6 +49,9 @@ class BearingRayIdsNode(Node):
         self.declare_parameter("track_ids", [44, 68, 99])
         self.declare_parameter("camera_frame", CAMERA_FRAME)
         self.camera_frame = self.get_parameter("camera_frame").value
+        # Must match yolo_action.py's camera_aperture; set both via /** in YAML.
+        self.declare_parameter("camera_aperture", CAMERA_APERTURE)
+        self.camera_aperture = self.get_parameter("camera_aperture").value
         self.correction_valid = False
         self.track_ids = {str(i) for i in self.get_parameter("track_ids").value}
         self.marker_ids = {
@@ -121,7 +124,7 @@ class BearingRayIdsNode(Node):
                 continue
 
             # bbox centre -> angle off boresight, same as yolo_action.py
-            angle_per_pixel = math.radians(CAMERA_APERTURE) / detection.mask.width
+            angle_per_pixel = math.radians(self.camera_aperture) / detection.mask.width
             yaw = (
                 -1.0
                 * (detection.bbox.center.position.x - 0.5 * detection.mask.width)
