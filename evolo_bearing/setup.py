@@ -43,6 +43,10 @@ setup(
                 "bearing_marker_node = "
                 "evolo_bearing.bearing_marker_node:main"
             ),
+            (
+                "sim_gimbal_feedback_node = "
+                "evolo_bearing.sim_gimbal_feedback_node:main"
+            ),
         ],
     },
 )

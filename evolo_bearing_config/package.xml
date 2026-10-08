@@ -30,6 +30,7 @@
   <exec_depend>evolo_bearing_error</exec_depend>
   <exec_depend>yolo_ros</exec_depend>
   <exec_depend>yolo_smarc_actions</exec_depend>
+  <exec_depend>z1_pro_driver</exec_depend>
 
   <exec_depend>pointcloud_preprocessing</exec_depend>
   <exec_depend>clustering_segmentation</exec_depend>

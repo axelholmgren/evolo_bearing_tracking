@@ -112,6 +112,28 @@ def _launch_yolo(context):
             parameters=[EVOLO_ACTION_ARGS, str(params_file)],
         )
     )
+    # Sim gimbal loop: Unity has no Gcudata, so echo commands as feedback.
+    nodes += [
+        Node(
+            package="evolo_bearing",
+            executable="sim_gimbal_feedback_node",
+            name="sim_gimbal_feedback_node",
+            output="screen",
+            parameters=[str(params_file)],
+        ),
+        Node(
+            package="z1_pro_driver",
+            executable="gimbal_action.py",
+            name="gimbal_camera_action_server",
+            namespace="evolo",
+            output="screen",
+            # z1_pro_action_launch.py default; the node's own is /yolo/tracked_poi.
+            parameters=[
+                {"img_poi_topic": EVOLO_ACTION_ARGS["image_poi_output"]},
+                str(params_file),
+            ],
+        ),
+    ]
     return nodes
 
 

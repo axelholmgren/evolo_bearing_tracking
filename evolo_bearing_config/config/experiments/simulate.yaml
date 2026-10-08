@@ -67,7 +67,7 @@ corrected_camera_tf_node:
     # Gimbal yaw TF frame.
     # yaw_frame: evolo/z1_yaw_link
     # Raw camera TF: evolo/z1_camera_link or evolo/z1_global_camera_link.
-    camera_frame: evolo/z1_camera_link
+    # camera_frame: evolo/z1_camera_link
     # Corrected output TF; custom frames also need holy.camera_frame.
     # corrected_camera_frame: evolo/z1_camera_corrected_link
     # false=trigger on yaw TF, true=on camera TF (global-camera bags).
