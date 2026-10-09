@@ -52,78 +52,100 @@ Visualization Manager:
       Enabled: true
       Frame Timeout: 15
       Frames:
-        All Enabled: true
+        All Enabled: false
+        Obstacles_Evolo_HDRP/Boat1:
+          Value: false
+        Obstacles_Evolo_HDRP/Bouy_5:
+          Value: false
+        Obstacles_Evolo_HDRP/Obstacles_Evolo_HDRP:
+          Value: false
+        Obstacles_Evolo_HDRP/map:
+          Value: false
+        Obstacles_Evolo_HDRP/odom:
+          Value: false
         base_footprint:
-          Value: true
+          Value: false
         evolo/base_link:
           Value: true
+        evolo/camera_link:
+          Value: true
+        evolo/gps_link:
+          Value: false
+        evolo/imu_link:
+          Value: false
         evolo/lidar_link:
-          Value: true
+          Value: false
         evolo/map:
-          Value: true
+          Value: false
         evolo/odom:
-          Value: true
+          Value: false
+        evolo/sidescan_link:
+          Value: false
         evolo/z1_base_link:
-          Value: true
+          Value: false
         evolo/z1_camera_link:
-          Value: true
-        evolo/z1_global_camera_corrected_link:
-          Value: true
+          Value: false
         evolo/z1_global_camera_link:
-          Value: true
+          Value: false
         evolo/z1_global_optical_frame:
-          Value: true
+          Value: false
         evolo/z1_optical_frame:
-          Value: true
-        evolo/z1_pitch_link:
-          Value: true
-        evolo/z1_roll_link:
-          Value: true
-        evolo/z1_yaw_link:
-          Value: true
+          Value: false
         os_imu:
-          Value: true
+          Value: false
         os_lidar:
-          Value: true
+          Value: false
         os_sensor:
-          Value: true
+          Value: false
+        unity_origin:
+          Value: false
         utm:
-          Value: true
-        utm_34_V:
-          Value: true
-      Marker Scale: 1
+          Value: false
+        utm_33_V:
+          Value: false
+      Marker Scale: 50
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: false
       Tree:
-        evolo/odom:
-          base_footprint:
-            {}
-          evolo/base_link:
-            evolo/lidar_link:
-              os_sensor:
-                os_imu:
+        unity_origin:
+          Obstacles_Evolo_HDRP/map:
+            Obstacles_Evolo_HDRP/odom:
+              Obstacles_Evolo_HDRP/Obstacles_Evolo_HDRP:
+                Obstacles_Evolo_HDRP/Boat1:
                   {}
-                os_lidar:
+                Obstacles_Evolo_HDRP/Bouy_5:
                   {}
-            evolo/z1_base_link:
-              evolo/z1_yaw_link:
-                evolo/z1_roll_link:
-                  evolo/z1_pitch_link:
-                    evolo/z1_camera_link:
-                      evolo/z1_optical_frame:
-                        {}
           evolo/map:
-            evolo/z1_global_camera_corrected_link:
-              {}
-            evolo/z1_global_camera_link:
-              evolo/z1_global_optical_frame:
+            evolo/odom:
+              base_footprint:
                 {}
-        utm:
-          {}
-        utm_34_V:
-          {}
+              evolo/base_link:
+                evolo/camera_link:
+                  {}
+                evolo/gps_link:
+                  {}
+                evolo/imu_link:
+                  {}
+                evolo/lidar_link:
+                  os_sensor:
+                    os_imu:
+                      {}
+                    os_lidar:
+                      {}
+                evolo/sidescan_link:
+                  {}
+                evolo/z1_base_link:
+                  evolo/z1_camera_link:
+                    evolo/z1_global_camera_link:
+                      {}
+                    evolo/z1_optical_frame:
+                      evolo/z1_global_optical_frame:
+                        {}
+        utm_33_V:
+          utm:
+            {}
       Update Interval: 0
       Value: true
     - Class: rviz_default_plugins/Marker
@@ -195,7 +217,7 @@ Visualization Manager:
       Enabled: true
       Name: Corrected LiDAR Boxes
       Namespaces:
-        "": true
+        {}
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -271,9 +293,9 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 2870
+      Max Intensity: 254.52658081054688
       Min Color: 0; 0; 0
-      Min Intensity: 5
+      Min Intensity: 0
       Name: PointCloud2
       Position Transformer: XYZ
       Selectable: true
@@ -383,7 +405,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 924.9381103515625
+      Distance: 236.9831085205078
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -398,10 +420,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.5697963237762451
+      Pitch: 1.024796724319458
       Target Frame: evolo/base_link
       Value: Orbit (rviz)
-      Yaw: 1.2572252750396729
+      Yaw: 5.075408935546875
     Saved: ~
 Window Geometry:
   Displays:

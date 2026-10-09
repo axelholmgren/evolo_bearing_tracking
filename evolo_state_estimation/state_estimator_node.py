@@ -19,14 +19,14 @@ class StateEstimatorNode(Node):
         # Select at startup; both estimators return [x, y, vx, vy].
         self.declare_parameter(
             "coordinates", "modified_polar"
-        )  # modified polar/cartesian
+        )  # modified_polar/cartesian
         self.declare_parameter("method", "ekf")  # ekf/ukf
 
-        self.declare_parameter("initial_range", 100.0)  # meters
-        self.declare_parameter("initial_range_std", 100.0)  # meters
-        self.declare_parameter("initial_velocity_std", 0.01)  # m/s
+        self.declare_parameter("initial_range", 50.0)  # meters
+        self.declare_parameter("initial_range_std", 20.0)  # meters
+        self.declare_parameter("initial_velocity_std", 1)  # m/s
         self.declare_parameter("bearing_std", 1.0)  # deg
-        self.declare_parameter("acceleration", 0.001)  # m^2/s^3
+        self.declare_parameter("acceleration", 0.01)  # m^2/s^3
 
         self.initial_range = self.get_parameter("initial_range").value
         self.initial_range_std = self.get_parameter("initial_range_std").value
@@ -132,7 +132,7 @@ class StateEstimatorNode(Node):
         position.type = Marker.SPHERE
         position.pose.position = output.position
         position.pose.orientation.w = 1.0
-        position.scale.x = position.scale.y = position.scale.z = 2.0
+        position.scale.x = position.scale.y = position.scale.z = 5.0
         position.color.g = position.color.b = 0.5
         position.color.a = 1.0
 
