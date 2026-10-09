@@ -83,6 +83,7 @@ class ModifiedPolarEKF:
         if self.y is None:
             r_h = self.initial_range
             camera_velocity = np.zeros(2)
+            log_likelihood = 0.0
             y = np.array([0., 0., bearing, 1 / r_h])
             P = np.diag([(self.velocity_std / r_h)**2,
                          (self.velocity_std / r_h)**2,
@@ -130,7 +131,9 @@ class ModifiedPolarEKF:
 
             # Update: H = [0, 0, 1, 0], with wrapped bearing innovation.
             innovation = math.atan2(math.sin(bearing - y[2]), math.cos(bearing - y[2]))
-            K = P[:, 2] / (P[2, 2] + R)
+            S = P[2, 2] + R
+            log_likelihood = -0.5 * (innovation**2 / S + math.log(2 * math.pi * S))
+            K = P[:, 2] / S
             y = y + K * innovation
             P = P - np.outer(K, P[2, :])
 
@@ -140,6 +143,7 @@ class ModifiedPolarEKF:
         P = (P + P.T) / 2
         P_x = J_inverse @ P @ J_inverse.T
         self.y, self.P = y, P
+        self.log_likelihood = log_likelihood  # Bearing likelihood, for filter banks.
         self.timestamp = timestamp
         self.origin = origin.copy()
         self.camera_velocity = camera_velocity.copy()

@@ -7,6 +7,7 @@ from cartesian_estimator import CartesianEKF
 from evolo_msgs.msg import BearingObservation, TargetStateStamped
 from geometry_msgs.msg import Point, PoseWithCovarianceStamped
 from modified_polar_estimator import ModifiedPolarEKF
+from range_parameterised_estimator import RangeParameterisedMPC
 from rclpy.node import Node
 from rclpy.time import Time
 from stonesoup.updater.kalman import UnscentedKalmanUpdater
@@ -19,7 +20,7 @@ class StateEstimatorNode(Node):
         # Select at startup; both estimators return [x, y, vx, vy].
         self.declare_parameter(
             "coordinates", "modified_polar"
-        )  # modified_polar/cartesian
+        )  # modified_polar/cartesian/range_parameterised
         self.declare_parameter("method", "ekf")  # ekf/ukf
 
         self.declare_parameter("initial_range", 50.0)  # meters
@@ -27,6 +28,10 @@ class StateEstimatorNode(Node):
         self.declare_parameter("initial_velocity_std", 1)  # m/s
         self.declare_parameter("bearing_std", 1.0)  # deg
         self.declare_parameter("acceleration", 0.01)  # m^2/s^3
+        # range_parameterised only; replaces initial_range and initial_range_std.
+        self.declare_parameter("min_range", 20.0)  # meters
+        self.declare_parameter("max_range", 2000.0)  # meters
+        self.declare_parameter("n_filters", 8)
 
         self.initial_range = self.get_parameter("initial_range").value
         self.initial_range_std = self.get_parameter("initial_range_std").value
@@ -36,7 +41,7 @@ class StateEstimatorNode(Node):
 
         coordinates = self.get_parameter("coordinates").value
         method = self.get_parameter("method").value
-        self.estimator: CartesianEKF | ModifiedPolarEKF
+        self.estimator: CartesianEKF | ModifiedPolarEKF | RangeParameterisedMPC
         if coordinates == "cartesian" and method == "ekf":
             self.estimator = CartesianEKF(
                 self.initial_range,
@@ -58,6 +63,16 @@ class StateEstimatorNode(Node):
             self.estimator = ModifiedPolarEKF(
                 self.initial_range,
                 self.initial_range_std,
+                self.initial_velocity_std,
+                self.bearing_std,
+                self.acceleration,
+                method=method,
+            )
+        elif coordinates == "range_parameterised" and method in ("ekf", "ukf"):
+            self.estimator = RangeParameterisedMPC(
+                self.get_parameter("min_range").value,
+                self.get_parameter("max_range").value,
+                self.get_parameter("n_filters").value,
                 self.initial_velocity_std,
                 self.bearing_std,
                 self.acceleration,
