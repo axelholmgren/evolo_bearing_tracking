@@ -7,10 +7,6 @@
 
 holy:
   ros__parameters:
-    # false=external YOLO, true=start local simulation stack.
-    yolo: true
-    # Python 3.10 venv with cached weights in models/; ~ supported.
-    yolo_venv: ~/code/ros2_ws/src/smarc2/perception/smarc_yolo/yolo_ros/.venv
     # true/false: selected-target ray.
     bearing_ray: true
     # true/false: rays for track_ids below.
@@ -56,7 +52,7 @@ holy:
   ros__parameters:
     # false=wall clock, true=/clock from Unity or bag replay.
     use_sim_time: true
-    # Horizontal FOV in degrees for yolo_action_server_node and bearing_ray_ids_node.
+    # Horizontal FOV in degrees for bearing_ray_ids_node.
     # Set only here: a later node section would override /**.
     # camera_aperture: 57.1
 
@@ -67,7 +63,7 @@ corrected_camera_tf_node:
     # Gimbal yaw TF frame.
     # yaw_frame: evolo/z1_yaw_link
     # Raw camera TF: evolo/z1_camera_link or evolo/z1_global_camera_link.
-    # camera_frame: evolo/z1_camera_link
+    camera_frame: evolo/z1_camera_link
     # Corrected output TF; custom frames also need holy.camera_frame.
     # corrected_camera_frame: evolo/z1_camera_corrected_link
     # false=trigger on yaw TF, true=on camera TF (global-camera bags).
@@ -151,74 +147,3 @@ smarcduino_position_marker_node:
 # No custom parameters; topics/frame are fixed.
 smarcduino_waraps_position_marker_node:
   ros__parameters: {}
-
-# YOLO sections apply only when holy.yolo=true.
-# Commented keys follow smarc2 evolo_bringup.sh, then yolo_bringup/yolo.launch.py.
-# Image input: /evolo/sensors/gimbal_camera/camera/image_raw (fixed).
-# Requires models/yoloe-26s-seg.pt and mobileclip2_b.ts even with model overrides.
-/yolo/yolo_node:
-  ros__parameters:
-    # YOLO, World, YOLOE; action server requires World/YOLOE.
-    # model_type: YOLOE
-    # Weights path; relative to venv/models/.
-    # model: yoloe-26s-seg.pt
-    # cpu or CUDA device, e.g. cuda:0.
-    # device: cuda:0
-    # false=skip images, true=run inference.
-    # enable: true
-    # true/false: model fusion; unsupported for YOLOE.
-    # fuse_model: false
-    # cv_bridge encoding, e.g. bgr8 or rgb8.
-    # yolo_encoding: bgr8
-    # 0=system default, 1=reliable, 2=best effort.
-    # image_reliability: 2
-    # Confidence threshold [0.0, 1.0].
-    threshold: 0.1
-    # NMS IoU threshold [0.0, 1.0].
-    # iou: 0.7
-    # Positive inference height in pixels.
-    # imgsz_height: 480
-    # Positive inference width in pixels.
-    # imgsz_width: 640
-    # false=full precision, true=FP16 (device/model support required).
-    # half: false
-    # Positive maximum detections per image.
-    # max_det: 300
-    # true/false: augmented inference (model support required).
-    # augment: false
-    # false=class-aware NMS, true=across classes.
-    # agnostic_nms: false
-    # false=inference-size masks, true=original-image-size masks.
-    # retina_masks: false
-
-# /yolo/tracking_node:
-  # ros__parameters:
-    # botsort.yaml, bytetrack.yaml, or custom YAML for either tracker.
-    # tracker: botsort.yaml
-    # 0=system default, 1=reliable, 2=best effort.
-    # image_reliability: 2
-
-# /yolo/debug_node:
-  # ros__parameters:
-    # 0=system default, 1=reliable, 2=best effort.
-    # image_reliability: 2
-
-/evolo/yolo_action_server_node:
-  ros__parameters:
-    # Prompt list, e.g. ["person", "boat", "buoy"]; [""]=no request.
-    startup_classes: ["floating object", "buoy","boat"]
-    # DetectionArray input topic.
-    # yolo_tracking_topic: /yolo/tracking
-    # QuaternionStamped output; bearing_ray_node expects this default.
-    # image_poi_output: /evolo/gimbal_camera/tracked_poi_image
-    # Selected-target DetectionArray output.
-    # target_output: /yolo/target
-    # Seconds before releasing a missing automatic target (>=0).
-    # lock_timeout: 3.0
-    # camera_aperture: set under /** (shared with bearing_ray_ids_node).
-    # Camera-link frame ID in POI messages.
-    # camera_frame_id: evolo/z1_camera_link
-    # SetClasses service; "serivce" is the upstream spelling.
-    # set_classes_serivce: /yolo/set_classes
-    # SetParameters service; "serivce" is the upstream spelling.
-    # set_parameter_serivce: /yolo/yolo_node/set_parameters
