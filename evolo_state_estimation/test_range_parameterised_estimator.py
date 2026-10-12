@@ -6,7 +6,6 @@ import unittest
 
 import numpy as np
 
-from modified_polar_estimator import ModifiedPolarEKF
 from range_parameterised_estimator import RangeParameterisedMPC
 
 
@@ -16,7 +15,6 @@ def run(estimator, target, steps=120):
     errors = []
     for k in range(steps):
         # Straight leg, then a turn so range becomes observable.
-        heading = 0. if k < 40 else math.pi / 2
         origin = (np.array([3. * k, 0.]) if k < 40
                   else np.array([120., 3. * (k - 40)]))
         position = target + np.array([1., 0.5]) * k
