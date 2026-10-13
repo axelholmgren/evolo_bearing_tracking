@@ -1,0 +1,17 @@
+# python3 evolo_bearing_config/scripts/send_evolo_path.py <this file> --ros-args -p use_sim_time:=true
+#
+# All positions in metres: x = east, y = north, origin = evolo's start
+# (Unity world origin in AskoBearingSetups; evolo starts there facing north).
+#
+# Boats use the same metres, typed on each boat's WaypointNPCController in Unity:
+#   Boat1: start [30, 150], startHeading 270, no waypoints (stationary)
+
+evolo:
+  # slow, standard, fast, or knots.
+  speed: standard
+  # Metres; waypoint counts as reached inside this radius.
+  tolerance: 10.0
+  # [east, north] metres, visited in order.
+  waypoints:
+    - [0, 100]
+    - [0, 300]
