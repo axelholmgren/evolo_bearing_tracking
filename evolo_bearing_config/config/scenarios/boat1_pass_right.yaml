@@ -4,14 +4,15 @@
 # (Unity world origin in AskoBearingSetups; evolo starts there facing north).
 #
 # Boats use the same metres, typed on each boat's WaypointNPCController in Unity:
-#   Boat1: start [30, 150], startHeading 270, no waypoints (stationary)
+#   Boat1: start [30, 150] m, startHeading 270 deg, no waypoints (stationary)
 
 evolo:
-  # slow, standard, fast, or knots.
+  # m/s, or a preset: slow = 4.63 m/s, standard = 4.9 m/s, fast = 6.0 m/s
+  # (evolo_move_path evolo_params.yaml; control.py clamps to 6 m/s).
   speed: standard
-  # Metres; waypoint counts as reached inside this radius.
+  # m; waypoint counts as reached inside this radius.
   tolerance: 10.0
-  # [east, north] metres, visited in order.
+  # [east, north] m from evolo's start, visited in order.
   waypoints:
     - [0, 100]
     - [0, 300]
