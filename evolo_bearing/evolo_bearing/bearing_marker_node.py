@@ -1,8 +1,7 @@
 import rclpy
 import math
 from evolo_msgs.msg import BearingObservation
-from geometry_msgs.msg import (Point, QuaternionStamped, Transform,
-                               TransformStamped, Vector3, Vector3Stamped)
+from geometry_msgs.msg import Point,Vector3,Vector3Stamped
 from rclpy.duration import Duration
 from rclpy.executors import MultiThreadedExecutor  # NOTE: for waiting on tf
 from rclpy.node import Node
@@ -14,10 +13,14 @@ from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 from visualization_msgs.msg import Marker
 
+from yolo_msgs.msg import DetectionArray
+from evolo_bearing.bearing_math import load_camera_info,pixel_to_link_ray
+
 # WORLD_FRAME = "evolo/map"
 WORLD_FRAME = "evolo/odom"
 RAY_LENGTH = 300  # Arbitrary ray length for visualization
 CORRECTED_CAMERA_FRAME = "evolo/z1_camera_corrected_link"
+CAMERA_APERTURE = 57.1 # same as yolo_action.py uses
 CORRECTION_VALID_TOPIC = "/evolo/gimbal_camera/yaw_correction_valid"
 MARKER_COLOR_RAW = (1.0, 0.2, 0.6)
 MARKER_COLOR_INVALID = (1.0, 0.0, 0.0)
@@ -30,10 +33,9 @@ class BearingRayNode(Node):
 
     Visualization as an ARROW marker.
 
-    tracked_poi_image is a small rotation off the camera boresight, from
-    yolo_action.py's detection bbox center. Not a world frame bearing on its
-    own, it gets composed with the camera's TF orientation to get a real
-    direction.
+    /yolo/target holds the detection yolo_action.py selected. Its bbox
+    centre becomes a ray in camera link, composed with the camera's TF at the
+    image stamp to get a world direction.
     """
 
     def __init__(self):
@@ -56,7 +58,18 @@ class BearingRayNode(Node):
         self.keep_ray_history = self.get_parameter("keep_ray_history").value
         self.declare_parameter("tf_timeout", 0.15)
         self.tf_timeout = self.get_parameter("tf_timeout").value
-
+        # Must match yolo_action.py camera aperture
+        self.declare_parameter("camera_aperture", CAMERA_APERTURE)
+        self.camera_aperture = self.get_parameter("camera_aperture").value
+        # "" = linear aperture model, otherwise a camera calibration YAML path
+        self.declare_parameter("camera_info", "")
+        camera_info_file = self.get_parameter("camera_info").value
+        self.camera_info = (
+            load_camera_info(camera_info_file) if camera_info_file else None
+        )
+        self.get_logger().info(
+            f"Camera model: {camera_info_file or f'linear {self.camera_aperture} deg'}"
+        )
         self.next_marker_id = 0
         self.correction_valid = False
 

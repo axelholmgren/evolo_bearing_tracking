@@ -17,3 +17,8 @@ dependencies = [
     "scipy>=1.15.3",
     "stonesoup>=1.9.1",
 ]
+
+[dependency-groups]
+dev = [
+    "opencv-python-headless>=5.0.0.93",
+]

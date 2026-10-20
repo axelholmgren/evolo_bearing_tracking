@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 """Publishes camera bearing to track ids chosen with the track_ids parameter.
 
-Same as bearing_marker_node, except the offset is built from /yolo/tracking
-instead of tracked_poi_image, so it can point at an id yolo_action has not
-selected. The pixel -> angle maths is copied from yolo_action.py so the ray
-matches what tracked_poi_image would have held for that detection.
+Same as bearing_marker_node, except it reads /yolo/tracking instead of
+/yolo/target, so it can point at an id yolo_action has not selected.
 
 Track ids are per bag:
     ros2 run ... --ros-args -p track_ids:=[44,68,99]
@@ -24,6 +22,8 @@ from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 from visualization_msgs.msg import Marker
 from yolo_msgs.msg import DetectionArray
+
+from evolo_bearing.bearing_math import load_camera_info, pixel_to_link_ray
 
 WORLD_FRAME = "evolo/odom"
 CAMERA_FRAME = "evolo/z1_camera_link"
@@ -49,9 +49,18 @@ class BearingRayIdsNode(Node):
         self.declare_parameter("track_ids", [44, 68, 99])
         self.declare_parameter("camera_frame", CAMERA_FRAME)
         self.camera_frame = self.get_parameter("camera_frame").value
-        # Must match yolo_action.py's camera_aperture; set both via /** in YAML.
+        # Must match yolo_action.py camera aperture
         self.declare_parameter("camera_aperture", CAMERA_APERTURE)
         self.camera_aperture = self.get_parameter("camera_aperture").value
+        # "" = linear aperture model, otherwise a camera calibration YAML path
+        self.declare_parameter("camera_info", "")
+        camera_info_file = self.get_parameter("camera_info").value
+        self.camera_info = (
+            load_camera_info(camera_info_file) if camera_info_file else None
+        )
+        self.get_logger().info(
+            f"Camera model: {camera_info_file or f'linear {self.camera_aperture} deg'}"
+        )
         self.correction_valid = False
         self.track_ids = {str(i) for i in self.get_parameter("track_ids").value}
         self.marker_ids = {
@@ -123,27 +132,18 @@ class BearingRayIdsNode(Node):
                 )
                 continue
 
-            # bbox centre -> angle off boresight, same as yolo_action.py
-            angle_per_pixel = math.radians(self.camera_aperture) / detection.mask.width
-            yaw = (
-                -1.0
-                * (detection.bbox.center.position.x - 0.5 * detection.mask.width)
-                * angle_per_pixel
-            )
-            pitch = (
-                1.0
-                * (detection.bbox.center.position.y - 0.5 * detection.mask.height)
-                * angle_per_pixel
+            # bbox centre to ray in camera link (x forward)
+            ray = pixel_to_link_ray(
+                detection.bbox.centre.position.x,
+                detection.bbox.centre.position.y,
+                detection.mask.width,
+                detection.mask.height,
+                self.camera_aperture,
+                self.camera_info,
             )
 
-            # x is forward in camera link, rotated by that yaw and pitch
-            forward = Vector3Stamped(
-                vector=Vector3(
-                    x=math.cos(pitch) * math.cos(yaw),
-                    y=math.cos(pitch) * math.sin(yaw),
-                    z=-math.sin(pitch),
-                )
-            )
+            forward = Vector3Stamped(vector=Vector3(x=ray[0], y=ray[1], z=ray[2]))
+
             bearing = do_transform_vector3(forward, transform).vector
 
             end_point = Point(
@@ -166,7 +166,8 @@ class BearingRayIdsNode(Node):
             # decomposition out to bearing_error_node without a second topic
             # to keep in sync (id, boresight_yaw_deg, angle_in_frame_deg)
             marker.text = (
-                f"{detection.id},{boresight_yaw_deg:.3f},{math.degrees(yaw):.3f}"
+                f"{detection.id},{boresight_yaw_deg}"
+                f"{math.degrees(math.atan2(ray[1],ray[0]))}"
             )
             marker.scale.x = 0.1  # shaft
             marker.scale.y = 1.0  # head width
@@ -175,9 +176,11 @@ class BearingRayIdsNode(Node):
             color = (
                 MARKER_COLOR_RAW
                 if self.camera_frame != CORRECTED_CAMERA_FRAME
-                else MARKER_COLOR_VALID
-                if self.correction_valid
-                else MARKER_COLOR_INVALID
+                else (
+                    MARKER_COLOR_VALID
+                    if self.correction_valid
+                    else MARKER_COLOR_INVALID
+                )
             )
             marker.color.r, marker.color.g, marker.color.b = color
             marker.lifetime = Duration(
