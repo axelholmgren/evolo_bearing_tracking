@@ -9,6 +9,7 @@ ROS 2 packages for bearing tracking, yaw correction, and bearing-error analysis.
 - `evolo_reference_markers/` — reference markers
 - `evolo_bearing_error/` — error calculation and CSV logging
 - `evolo_bearing_config/` — launch and experiment configs
+- `evolo_state_estimation/` — bearings-only estimators and node (plain Python, uv `.venv`)
 - `analysis/` — offline analysis
 
 ## Build

@@ -19,7 +19,7 @@ class StateEstimatorNode(Node):
         super().__init__("state_estimator_node")
         # Select at startup; both estimators return [x, y, vx, vy].
         self.declare_parameter(
-            "coordinates", "modified_polar"
+            "coordinates", "range_parameterised"
         )  # modified_polar/cartesian/range_parameterised
         self.declare_parameter("method", "ekf")  # ekf/ukf
 

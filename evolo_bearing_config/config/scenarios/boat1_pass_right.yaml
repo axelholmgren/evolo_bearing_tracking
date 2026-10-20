@@ -14,5 +14,5 @@ evolo:
   tolerance: 10.0
   # [east, north] m from evolo's start, visited in order.
   waypoints:
-    - [0, 100]
+    # - [0, 100]
     - [0, 300]

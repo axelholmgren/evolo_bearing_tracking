@@ -6,6 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
+        - /TF1/Frames1
         - /Odometry1/Topic1
       Splitter Ratio: 0.5
     Tree Height: 520
@@ -68,7 +69,7 @@ Visualization Manager:
         evolo/base_link:
           Value: true
         evolo/camera_link:
-          Value: true
+          Value: false
         evolo/gps_link:
           Value: false
         evolo/imu_link:
@@ -90,7 +91,7 @@ Visualization Manager:
         evolo/z1_global_optical_frame:
           Value: false
         evolo/z1_optical_frame:
-          Value: false
+          Value: true
         os_imu:
           Value: false
         os_lidar:
@@ -109,6 +110,31 @@ Visualization Manager:
       Show Axes: true
       Show Names: false
       Tree:
+        evolo/odom:
+          base_footprint:
+            {}
+          evolo/base_link:
+            evolo/camera_link:
+              {}
+            evolo/gps_link:
+              {}
+            evolo/imu_link:
+              {}
+            evolo/lidar_link:
+              os_sensor:
+                os_imu:
+                  {}
+                os_lidar:
+                  {}
+            evolo/sidescan_link:
+              {}
+            evolo/z1_base_link:
+              evolo/z1_camera_link:
+                evolo/z1_global_camera_link:
+                  {}
+                evolo/z1_optical_frame:
+                  evolo/z1_global_optical_frame:
+                    {}
         unity_origin:
           Obstacles_Evolo_HDRP/map:
             Obstacles_Evolo_HDRP/odom:
@@ -118,31 +144,7 @@ Visualization Manager:
                 Obstacles_Evolo_HDRP/Bouy_5:
                   {}
           evolo/map:
-            evolo/odom:
-              base_footprint:
-                {}
-              evolo/base_link:
-                evolo/camera_link:
-                  {}
-                evolo/gps_link:
-                  {}
-                evolo/imu_link:
-                  {}
-                evolo/lidar_link:
-                  os_sensor:
-                    os_imu:
-                      {}
-                    os_lidar:
-                      {}
-                evolo/sidescan_link:
-                  {}
-                evolo/z1_base_link:
-                  evolo/z1_camera_link:
-                    evolo/z1_global_camera_link:
-                      {}
-                    evolo/z1_optical_frame:
-                      evolo/z1_global_optical_frame:
-                        {}
+            {}
         utm_33_V:
           utm:
             {}
@@ -293,7 +295,7 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 254.52658081054688
+      Max Intensity: 253.21249389648438
       Min Color: 0; 0; 0
       Min Intensity: 0
       Name: PointCloud2
@@ -405,25 +407,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 236.9831085205078
+      Distance: 0.021996403113007545
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 7.131903648376465
-        Y: -3.8468728065490723
-        Z: 6.04797887802124
+        X: -23.794130325317383
+        Y: 12.968213081359863
+        Z: 340.34307861328125
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.024796724319458
+      Pitch: 1.5647963285446167
       Target Frame: evolo/base_link
       Value: Orbit (rviz)
-      Yaw: 5.075408935546875
+      Yaw: 0.3622240424156189
     Saved: ~
 Window Geometry:
   Displays:

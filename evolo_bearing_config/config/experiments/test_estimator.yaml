@@ -37,7 +37,7 @@ holy:
     rviz: true
 
     # Rosbag replay
-    rosbag: false
+    rosbag: true
 
 
     # ------------------------------------------------------------
@@ -50,7 +50,7 @@ holy:
     rviz_config: ""
 
     # Required when rosbag: true.
-    bag_path: "~/ros_logs/AXL/CAM/rosbag2_2026_08_17-15_02_44/"
+    bag_path: "~/ros_logs/AXL/CAM/rosbag2_2026_08_17-12_20_02/"
 
     replay_rate: 1.0
     start_offset: 0.0
