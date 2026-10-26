@@ -1,8 +1,7 @@
 import rclpy
 import math
 from evolo_msgs.msg import BearingObservation
-from geometry_msgs.msg import (Point, QuaternionStamped, Transform,
-                               TransformStamped, Vector3, Vector3Stamped)
+from geometry_msgs.msg import Point,Vector3,Vector3Stamped
 from rclpy.duration import Duration
 from rclpy.executors import MultiThreadedExecutor  # NOTE: for waiting on tf
 from rclpy.node import Node
@@ -14,10 +13,13 @@ from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 from visualization_msgs.msg import Marker
 
+from yolo_msgs.msg import DetectionArray
+from evolo_bearing.bearing_math import load_camera_info,pixel_to_link_ray
+
 # WORLD_FRAME = "evolo/map"
 WORLD_FRAME = "evolo/odom"
 RAY_LENGTH = 300  # Arbitrary ray length for visualization
-CORRECTED_CAMERA_FRAME = "evolo/z1_camera_corrected_link"
+CAMERA_APERTURE = 57.1 # same as yolo_action.py uses
 CORRECTION_VALID_TOPIC = "/evolo/gimbal_camera/yaw_correction_valid"
 MARKER_COLOR_RAW = (1.0, 0.2, 0.6)
 MARKER_COLOR_INVALID = (1.0, 0.0, 0.0)
@@ -30,10 +32,9 @@ class BearingRayNode(Node):
 
     Visualization as an ARROW marker.
 
-    tracked_poi_image is a small rotation off the camera boresight, from
-    yolo_action.py's detection bbox center. Not a world frame bearing on its
-    own, it gets composed with the camera's TF orientation to get a real
-    direction.
+    /yolo/target holds the detection yolo_action.py selected. Its bbox
+    center becomes a ray in camera link, composed with the camera's TF at the
+    image stamp to get a world direction.
     """
 
     def __init__(self):
@@ -54,20 +55,36 @@ class BearingRayNode(Node):
         self.camera_frame = self.get_parameter("camera_frame").value
         self.declare_parameter("keep_ray_history", False)
         self.keep_ray_history = self.get_parameter("keep_ray_history").value
+        self.declare_parameter("world_frame", WORLD_FRAME)
+        self.world_frame = self.get_parameter("world_frame").value
+        # true when camera_frame is a corrected TF: color rays by correction validity
+        self.declare_parameter("corrected", False)
+        self.corrected = self.get_parameter("corrected").value
         self.declare_parameter("tf_timeout", 0.15)
         self.tf_timeout = self.get_parameter("tf_timeout").value
-
+        # Must match yolo_action.py camera aperture
+        self.declare_parameter("camera_aperture", CAMERA_APERTURE)
+        self.camera_aperture = self.get_parameter("camera_aperture").value
+        # "" = linear aperture model, otherwise a camera calibration YAML path
+        self.declare_parameter("camera_info", "")
+        camera_info_file = self.get_parameter("camera_info").value
+        self.camera_info = (
+            load_camera_info(camera_info_file) if camera_info_file else None
+        )
+        self.get_logger().info(
+            f"Camera model: {camera_info_file or f'linear {self.camera_aperture} deg'}"
+        )
         self.next_marker_id = 0
         self.correction_valid = False
 
         self.subscription = self.create_subscription(
-            msg_type=QuaternionStamped,
-            topic="/evolo/gimbal_camera/tracked_poi_image",
-            callback=self.poi_callback,
+            msg_type=DetectionArray,
+            topic="/yolo/target",
+            callback=self.target_callback,
             qos_profile=10,
         )
 
-        if self.camera_frame == CORRECTED_CAMERA_FRAME:
+        if self.corrected:
             self.create_subscription(
                 Bool,
                 CORRECTION_VALID_TOPIC,
@@ -78,7 +95,11 @@ class BearingRayNode(Node):
     def correction_valid_callback(self, msg):
         self.correction_valid = msg.data
 
-    def poi_callback(self, msg: QuaternionStamped):
+    def target_callback(self, msg: DetectionArray):
+        if not msg.detections:
+            return # yolo_action published empty array when no lock 
+        detection = msg.detections[0]
+
         try:
             # transform = self.tf_buffer.lookup_transform(
             #     target_frame=WORLD_FRAME,
@@ -92,7 +113,7 @@ class BearingRayNode(Node):
             #      time=Time.from_msg(msg.header.stamp),
             #  ) #NOTE perserve time
             transform = self.tf_buffer.lookup_transform(
-                target_frame=WORLD_FRAME,
+                target_frame=self.world_frame,
                 source_frame=self.camera_frame,
                 time=Time.from_msg(msg.header.stamp),
                 timeout=Duration(seconds=self.tf_timeout),
@@ -101,7 +122,7 @@ class BearingRayNode(Node):
         except TransformException as ex:
             self.get_logger().warning(
                 f"Dropping bearing: TF unavailable at observation time "
-                f"for {self.camera_frame} -> {WORLD_FRAME}: {ex}"
+                f"for {self.camera_frame} -> {self.world_frame}: {ex}"
             )
             return
 
@@ -114,24 +135,26 @@ class BearingRayNode(Node):
             z=transform.transform.translation.z,
         )
 
-        # x is forward in camera link (not optical frame)
-        forward = Vector3Stamped(vector=Vector3(x=1.0, y=0.0, z=0.0))
-
-        # Quaternion for offset, wrapping for do_transform_vector3()
-        offset_transform = TransformStamped(
-            transform=Transform(rotation=msg.quaternion)
+        # bbox center to ray in camera link (x forward)
+        ray = pixel_to_link_ray(
+            detection.bbox.center.position.x,
+            detection.bbox.center.position.y,
+            detection.mask.width,
+            detection.mask.height,
+            self.camera_aperture,
+            self.camera_info,
         )
 
-        # offset -> target frame direction -> map frame
-        target_frame_direction = do_transform_vector3(forward, offset_transform)
-        bearing_vector = do_transform_vector3(target_frame_direction, transform)
+        forward = Vector3Stamped(vector=Vector3(x=ray[0], y=ray[1], z=ray[2]))
+
+        bearing_vector = do_transform_vector3(forward, transform)
         
         direction = bearing_vector.vector
 
         # Add to the bearing observation message
         observation = BearingObservation()
         observation.header.stamp = msg.header.stamp
-        observation.header.frame_id = WORLD_FRAME
+        observation.header.frame_id = self.world_frame
         observation.origin = origin
         observation.direction = direction
         observation.bearing = math.atan2(direction.y, direction.x)
@@ -146,7 +169,7 @@ class BearingRayNode(Node):
 
         # Populate marker
         marker = Marker()
-        marker.header.frame_id = WORLD_FRAME
+        marker.header.frame_id = self.world_frame
         # marker.header.stamp = self.get_clock().now().to_msg() #NOTE original
         marker.header.stamp = msg.header.stamp  # NOTE change to output the input stamp
         marker.type = Marker.ARROW
@@ -162,7 +185,7 @@ class BearingRayNode(Node):
         marker.color.a = 1.0
         color = (
             MARKER_COLOR_RAW
-            if self.camera_frame != CORRECTED_CAMERA_FRAME
+            if not self.corrected
             else MARKER_COLOR_VALID if self.correction_valid else MARKER_COLOR_INVALID
         )
         marker.color.r, marker.color.g, marker.color.b = color
