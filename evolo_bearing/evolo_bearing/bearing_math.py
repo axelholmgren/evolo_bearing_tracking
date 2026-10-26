@@ -19,7 +19,7 @@ def rotate_bearing_xy(x, y, angle_deg):
 
 
 def load_camera_info(path):
-    """Read a camera calubreation YAML"""
+    """Read a camera calibration YAML"""
     with open(path, "r") as f:
         calibration = yaml.safe_load(f) or {}
 
@@ -51,7 +51,7 @@ def pixel_to_link_ray(u, v, width, height, aperture_deg, camera_info=None):
 
     if (width, height) != (camera_info["width"], camera_info["height"]):
         raise ValueError(
-            f"image {width}x{height} does not match calibration"
+            f"image {width}x{height} does not match calibration "
             f"{camera_info['width']}x{camera_info['height']}"
         )
 

@@ -19,7 +19,7 @@ class PixelToLinkRayTest(unittest.TestCase):
         self.assertAlmostEqual(math.degrees(math.atan2(y, x)), -45.0)
         self.assertAlmostEqual(z, 0.0)
 
-    def test_below_centre_points_down(self):
+    def test_below_center_points_down(self):
         self.assertLess(pixel_to_link_ray(950, 900, 1920, 1080, 57.1, CALIB)[2], 0.0)
 
     def test_linear_matches_yolo_action(self):
@@ -31,12 +31,12 @@ class PixelToLinkRayTest(unittest.TestCase):
             math.cos(pitch) * math.sin(yaw),
             -math.sin(pitch),
         )
-        np.testing.assertu, v, 1920, 1080, 57.1),expected)
+        np.testing.assert_allclose(pixel_to_link_ray(u, v, 1920, 1080, 57.1), expected)
 
     def test_size_mismatch_raises(self):
-        with self.assertR
+        with self.assertRaises(ValueError):
             pixel_to_link_ray(640, 360, 1280, 720, 57.1, CALIB)
 
 
-if __name__ == "__main__"
+if __name__ == "__main__":
     unittest.main()

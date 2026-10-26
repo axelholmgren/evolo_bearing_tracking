@@ -29,7 +29,6 @@ WORLD_FRAME = "evolo/odom"
 CAMERA_FRAME = "evolo/z1_camera_link"
 CAMERA_APERTURE = 57.1  # same value yolo_action.py uses
 RAY_LENGTH = 300
-CORRECTED_CAMERA_FRAME = "evolo/z1_camera_corrected_link"
 CORRECTION_VALID_TOPIC = "/evolo/gimbal_camera/yaw_correction_valid"
 MARKER_COLOR_RAW = (1.0, 0.2, 0.6)
 MARKER_COLOR_INVALID = (1.0, 0.0, 0.0)
@@ -49,6 +48,11 @@ class BearingRayIdsNode(Node):
         self.declare_parameter("track_ids", [44, 68, 99])
         self.declare_parameter("camera_frame", CAMERA_FRAME)
         self.camera_frame = self.get_parameter("camera_frame").value
+        self.declare_parameter("world_frame", WORLD_FRAME)
+        self.world_frame = self.get_parameter("world_frame").value
+        # true when camera_frame is a corrected TF: color rays by correction validity
+        self.declare_parameter("corrected", False)
+        self.corrected = self.get_parameter("corrected").value
         # Must match yolo_action.py camera aperture
         self.declare_parameter("camera_aperture", CAMERA_APERTURE)
         self.camera_aperture = self.get_parameter("camera_aperture").value
@@ -80,7 +84,7 @@ class BearingRayIdsNode(Node):
             callback=self.tracking_callback,
             qos_profile=10,
         )
-        if self.camera_frame == CORRECTED_CAMERA_FRAME:
+        if self.corrected:
             self.create_subscription(
                 Bool,
                 CORRECTION_VALID_TOPIC,
@@ -101,13 +105,13 @@ class BearingRayIdsNode(Node):
 
         try:
             transform = self.tf_buffer.lookup_transform(
-                target_frame=WORLD_FRAME,
+                target_frame=self.world_frame,
                 source_frame=self.camera_frame,
                 time=Time.from_msg(msg.header.stamp),
             )
         except TransformException as ex:
             self.get_logger().info(
-                f"Could not transform {WORLD_FRAME} to {self.camera_frame}: {ex}"
+                f"Could not transform {self.world_frame} to {self.camera_frame}: {ex}"
             )
             return
 
@@ -132,10 +136,10 @@ class BearingRayIdsNode(Node):
                 )
                 continue
 
-            # bbox centre to ray in camera link (x forward)
+            # bbox center to ray in camera link (x forward)
             ray = pixel_to_link_ray(
-                detection.bbox.centre.position.x,
-                detection.bbox.centre.position.y,
+                detection.bbox.center.position.x,
+                detection.bbox.center.position.y,
                 detection.mask.width,
                 detection.mask.height,
                 self.camera_aperture,
@@ -154,7 +158,7 @@ class BearingRayIdsNode(Node):
 
             # RViz distinguishes markers by their (namespace, id) pair.
             marker = Marker()
-            marker.header.frame_id = WORLD_FRAME
+            marker.header.frame_id = self.world_frame
             # marker.header.stamp = self.get_clock().now().to_msg() #NOTE original
             marker.header.stamp = msg.header.stamp
             marker.ns = "selected_bearing_rays"
@@ -166,7 +170,7 @@ class BearingRayIdsNode(Node):
             # decomposition out to bearing_error_node without a second topic
             # to keep in sync (id, boresight_yaw_deg, angle_in_frame_deg)
             marker.text = (
-                f"{detection.id},{boresight_yaw_deg}"
+                f"{detection.id},{boresight_yaw_deg},"
                 f"{math.degrees(math.atan2(ray[1],ray[0]))}"
             )
             marker.scale.x = 0.1  # shaft
@@ -175,7 +179,7 @@ class BearingRayIdsNode(Node):
             marker.color.a = 1.0
             color = (
                 MARKER_COLOR_RAW
-                if self.camera_frame != CORRECTED_CAMERA_FRAME
+                if not self.corrected
                 else (
                     MARKER_COLOR_VALID
                     if self.correction_valid
