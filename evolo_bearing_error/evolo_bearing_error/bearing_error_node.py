@@ -27,6 +27,7 @@ Use `-p use_sim_time:=true` when replaying with `ros2 bag play --clock`.
 
 import csv
 import math
+from datetime import datetime
 from pathlib import Path
 
 import rclpy
@@ -88,7 +89,8 @@ class BearingErrorNode(Node):
             else RESULTS_DIR
             / (
                 f"bearing_error_{self.get_parameter('bag').value}_"
-                f"{bearing_name}_vs_{truth_name}_yaw_{yaw_correction_mode}.csv"
+                f"{bearing_name}_vs_{truth_name}_yaw_{yaw_correction_mode}_"
+                f"{datetime.now():%Y%m%d_%H%M%S}.csv"
             )
         )
         self.csv_file = None
@@ -97,7 +99,7 @@ class BearingErrorNode(Node):
             output_csv.parent.mkdir(parents=True, exist_ok=True)
             # Exclusive creation protects existing experiment data even if a
             # file appears after launch-time validation.
-            self.csv_file = output_csv.open("w", newline="")
+            self.csv_file = output_csv.open("x", newline="")
             self.csv_writer = csv.writer(self.csv_file)
             self.csv_writer.writerow(
                 [
