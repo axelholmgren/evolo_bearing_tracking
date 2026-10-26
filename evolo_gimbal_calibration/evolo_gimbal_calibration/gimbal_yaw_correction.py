@@ -52,7 +52,7 @@ SIGMA_NODE = np.array([
      1.10])
 
 C_ABSOLUTE = 6.12      # deg, measured absolute offset -- see caveat 3
-C_USER_OFFSET = 3.53
+C_USER_OFFSET = 0
 PSI_MIN, PSI_MAX = -95.0, 82.0
 
 HYSTERESIS = 0.79      # deg, CW readout minus CCW readout (Exp7, same session)
