@@ -21,6 +21,9 @@
   <exec_depend>evolo_gimbal_calibration</exec_depend>
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>evolo_msgs</exec_depend>
+  <exec_depend>python3-numpy</exec_depend>
+  <exec_depend>python3-opencv</exec_depend>
+  <exec_depend>python3-yaml</exec_depend>
 
   <test_depend>python3-pytest</test_depend>
 
