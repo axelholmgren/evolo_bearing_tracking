@@ -61,17 +61,7 @@ holy:
 # ================================================================
 
 bearing_ray_node:
-  ros__parameters:
-
-    gimbal_gcu_feedback_topic: /evolo/gimbal_camera/gimbal_gcu_fb
-
-    # Completely enable / disable yaw correction.
-    apply_yaw_correction: false
-
-    # absolute or shape
-    yaw_correction_mode: shape
-
-    negate_yaw_correction: false
+  ros__parameters: {}
 
 
 # ================================================================
@@ -80,20 +70,19 @@ bearing_ray_node:
 
 bearing_ray_ids_node:
   ros__parameters:
-    
-    
     track_ids:
       - 44
       - 68
       - 99
 
-    gimbal_gcu_feedback_topic: /evolo/gimbal_camera/gimbal_gcu_fb
 
-    apply_yaw_correction: false
+# ================================================================
+# YAW CORRECTION (corrected TF off; bearing error metadata only)
+# ================================================================
 
-    # absolute or shape
+corrected_camera_tf_node:
+  ros__parameters:
     yaw_correction_mode: shape
-
     negate_yaw_correction: false
 
 
@@ -103,8 +92,6 @@ bearing_ray_ids_node:
 
 bearing_error_node:
   ros__parameters:
-
-    bearing_topic: /evolo/gimbal_camera/target_bearing_marker
 
     # Empty = no selected-track filtering.
     bearing_track_id: ""
@@ -131,9 +118,6 @@ bearing_error_node:
     # ------------------------------------------------------------
     # Correction metadata
     # ------------------------------------------------------------
-
-    yaw_correction_mode: shape
-    negate_yaw_correction: false
 
     gimbal_gcu_feedback_topic: /evolo/gimbal_camera/gimbal_gcu_fb
 

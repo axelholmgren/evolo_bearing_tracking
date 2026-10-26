@@ -29,6 +29,8 @@ class SmarcduinoWarapsPositionMarkerNode(Node):
         super().__init__("smarcduino_waraps_position_marker_node")
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
+        self.declare_parameter("world_frame", WORLD_FRAME)
+        self.world_frame = self.get_parameter("world_frame").value
 
         self.marker_publisher = self.create_publisher(
             Marker, "/smarcduino/waraps/position_marker", qos_profile=10
@@ -51,17 +53,17 @@ class SmarcduinoWarapsPositionMarkerNode(Node):
         utm_point = convert_latlon_to_utm(geo_point)
 
         try:
-            map_point = self.tf_buffer.transform(utm_point, WORLD_FRAME)
+            map_point = self.tf_buffer.transform(utm_point, self.world_frame)
 
         except TransformException as ex:
             self.get_logger().info(
-                f"Could not transform {utm_point.header.frame_id} to {WORLD_FRAME}: {ex}"
+                f"Could not transform {utm_point.header.frame_id} to {self.world_frame}: {ex}"
             )
             return
 
         # Populate marker
         marker = Marker()
-        marker.header.frame_id = WORLD_FRAME
+        marker.header.frame_id = self.world_frame
         marker.header.stamp = self.get_clock().now().to_msg()
         marker.type = Marker.SPHERE
         marker.action = Marker.ADD

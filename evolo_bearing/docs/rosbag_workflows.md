@@ -1,7 +1,8 @@
 # Rosbag replay
 
-Copy `evolo_bearing_config/config/experiments/template.yaml`. Set `rosbag: true`,
-`bag_path`, and `use_sim_time: true`. Enable `bearing_error` to save a CSV.
+Copy `evolo_bearing_config/config/experiments/template.yaml`. Set `rosbag: true`
+and `bag_path`; `use_sim_time` and `clock` follow `rosbag`. Enable
+`bearing_error` to save a CSV.
 
 ```bash
 cd /home/axelholmgren/code/ros2_ws

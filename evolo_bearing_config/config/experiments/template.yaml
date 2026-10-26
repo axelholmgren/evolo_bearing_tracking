@@ -13,11 +13,13 @@ holy:
     bearing_ray_ids: false
     # false=raw TF, true=start and use corrected TF.
     corrected_camera_tf: false
-    # ""=auto; explicit frame overrides correction selection.
-    # Frames: evolo/z1_camera_link, evolo/z1_camera_corrected_link,
-    # evolo/z1_global_camera_link, evolo/z1_global_camera_corrected_link,
-    # or a custom camera-link TF (x forward).
-    camera_frame: ""
+    # raw=evolo/z1_camera_link, global=evolo/z1_global_camera_link (CAM bags).
+    camera: raw
+    # TF frame for rays and markers.
+    world_frame: evolo/odom
+    # ""=linear aperture model (camera_aperture below)
+    # otherwise camera_calibration_file YAML in evolo_config/config
+    camera_calibration_file: "z1_calibration.yaml"
     # true/false: bearing vs truth error.
     bearing_error: false
     # true/false: fixed GPS marker.
@@ -33,14 +35,14 @@ holy:
     rviz: true
     # true/false: bag replay; playback end stops launch.
     rosbag: false
-    # Selected-target ray topic; align bearing_error_node.bearing_topic.
+    # Selected-target ray topic; bearing_error_node default when bearing_ray is on.
     bearing_output_topic: /evolo/gimbal_camera/target_bearing_marker
     # ""=packaged default, otherwise an RViz file path.
     rviz_config: ""
     # Bag path (~ supported); required for rosbag=true.
     bag_path: ""
-    # true/false: publish /clock during replay; pair with use_sim_time.
-    clock: true
+    # true/false: publish /clock during replay; default follows use_sim_time.
+    # clock: true
     # Positive speed multiplier: 0.5=half, 1.0=normal, 2.0=double.
     replay_rate: 1.0
     # Seconds from bag start (>=0).
@@ -48,13 +50,13 @@ holy:
     # null=play to end; otherwise bag-relative seconds > start_offset.
     stop_time: null
 
-/**:
-  ros__parameters:
-    # false=wall clock, true=/clock from Unity or bag replay.
-    use_sim_time: true
-    # Horizontal FOV in degrees for bearing_ray_ids_node.
-    # Set only here: a later node section would override /**.
-    # camera_aperture: 57.1
+# /**:
+#   ros__parameters:
+#     # false=wall clock, true=/clock from Unity or bag replay; default holy.rosbag.
+#     # use_sim_time: false
+#     # Horizontal FOV in degrees for both bearing nodes linear model.
+#     # Set only here: a later node section would override /**.
+#     # camera_aperture: 57.1
 
 corrected_camera_tf_node:
   ros__parameters:
@@ -62,11 +64,11 @@ corrected_camera_tf_node:
     # base_frame: evolo/z1_base_link
     # Gimbal yaw TF frame.
     # yaw_frame: evolo/z1_yaw_link
-    # Raw camera TF: evolo/z1_camera_link or evolo/z1_global_camera_link.
+    # Raw camera TF; default from holy.camera.
     # camera_frame: evolo/z1_camera_link
-    # Corrected output TF; custom frames also need holy.camera_frame.
+    # Corrected output TF, also read by the rays; default <camera_frame>_corrected.
     # corrected_camera_frame: evolo/z1_camera_corrected_link
-    # false=trigger on yaw TF, true=on camera TF (global-camera bags).
+    # false=trigger on yaw TF, true=on camera TF; default true for camera: global.
     # camera_tf_driven: false
     # absolute=curve + offsets, shape=curve only.
     # yaw_correction_mode: absolute
@@ -75,46 +77,38 @@ corrected_camera_tf_node:
     # false=calibrated range only, true=hold endpoint.
     # extend_yaw_correction: false
 
-# Camera frame is selected by Holy.
+# camera_frame, world_frame, corrected default from holy; set here to override.
 # bearing_ray_node:
-  # ros__parameters:
-    # false=current ray, true=all rays (unbounded RViz history).
-    # keep_ray_history: false
-    # TF wait in seconds (>=0); 0=no wait.
-    # tf_timeout: 0.15
+#   ros__parameters:
+#     # false=current ray, true=all rays (unbounded RViz history).
+#     keep_ray_history: false
+#     # TF wait in seconds (>=0); 0=no wait.
+#     tf_timeout: 0.15
 
-# Camera frame is selected by Holy.
+# camera_frame, world_frame, corrected default from holy; set here to override.
 # bearing_ray_ids_node:
-  # ros__parameters:
-    # Integer tracking IDs, e.g. [44] or [44, 68, 99]; replace per run.
-    # track_ids:
-      # - 44
-      # - 68
-      # - 99
+#   ros__parameters:
+#     # Integer tracking IDs, e.g. [44] or [44, 68, 99]; replace per run.
+#     track_ids:
+#       - 44
+#       - 68
+#       - 99
 
-# Correction settings below are metadata; match correction-node settings.
+# Topics and yaw correction default from holy; set here to override.
 bearing_error_node:
   ros__parameters:
-    # Target-bearing Marker topic; selected IDs: /evolo/gimbal_camera/selected_bearing_marker.
+    # Default bearing_output_topic, or selected_bearing_marker with only bearing_ray_ids.
     # bearing_topic: /evolo/gimbal_camera/target_bearing_marker
     # ""=all tracks, otherwise string ID, e.g. "44".
     # bearing_track_id: ""
     # marker=truth_topic, lidar_box=lidar_boxes_topic.
     # truth_source: marker
-    # /fixed_position_marker, /smarcduino/position_marker,
-    # /smarcduino/waraps/position_marker, or another truth Marker topic.
-    # Must match bearing frame; smarcduino markers use evolo/map.
+    # Default: topic of the one enabled marker; set when several or none.
     # truth_topic: /fixed_position_marker
     # Bounding-box MarkerArray topic (truth_source=lidar_box).
     # lidar_boxes_topic: /bounding_boxes/corrected
     # Integer Marker.id of the truth box.
     # lidar_box_id: 0
-    # absolute=curve + offsets, shape=curve only.
-    yaw_correction_mode: shape
-    # false=normal sign, true=opposite sign.
-    negate_yaw_correction: true
-    # false=calibrated range only, true=hold endpoint.
-    # extend_yaw_correction: false
     # Gcudata topic for correction metadata.
     # gimbal_gcu_feedback_topic: /evolo/gimbal_camera/gimbal_gcu_fb
     # Run label for automatic CSV filename; ""=no label.
@@ -122,28 +116,28 @@ bearing_error_node:
     # false=no CSV, true=write CSV.
     save_csv: false
     # ""=automatic filename, otherwise CSV path (~ supported).
-    # Use a fresh path; existing files can be overwritten.
+    # Existing files are refused; automatic names get a timestamp.
     # output_file: ""
     # ""=disabled, otherwise Float64MultiArray output topic.
     # error_topic: ""
 
-fixed_position_marker_node:
-  ros__parameters:
-    # Degrees [-90, 90]; replace example with target position.
-    # latitude: 59.2985134
-    # Degrees [-180, 180].
-    # longitude: 18.2146923
-    # Meters.
-    # altitude: 0.0
-    # Fixed Marker output topic.
-    # marker_topic: /fixed_position_marker
-    # Reachable TF frame; evolo/odom matches bearing rays.
-    world_frame: evolo/odom
+# fixed_position_marker_node:
+#   ros__parameters:
+#     # Degrees [-90, 90]; replace example with target position.
+#     # latitude: 59.2985134
+#     # Degrees [-180, 180].
+#     # longitude: 18.2146923
+#     # Meters.
+#     # altitude: 0.0
+#     # Fixed Marker output topic.
+#     # marker_topic: /fixed_position_marker
+#     # Default holy.world_frame.
+#     # world_frame: evolo/odom
 
-# No custom parameters; topics/frame are fixed.
+# Topics are fixed; world_frame defaults to holy.world_frame.
 smarcduino_position_marker_node:
   ros__parameters: {}
 
-# No custom parameters; topics/frame are fixed.
+# Topics are fixed; world_frame defaults to holy.world_frame.
 smarcduino_waraps_position_marker_node:
   ros__parameters: {}

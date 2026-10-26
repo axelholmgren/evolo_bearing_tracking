@@ -30,8 +30,9 @@ ros2 launch evolo_bearing_config holy.launch.py \
   config:=/absolute/path/to/experiment.yaml
 ```
 
-Copy `evolo_bearing_config/config/experiments/template.yaml`. Set `rosbag`,
-`bag_path`, and `use_sim_time` for replay. Enable `bearing_error` to log CSV.
+Copy `evolo_bearing_config/config/experiments/template.yaml`. Set `rosbag: true`
+and `bag_path` for replay; `use_sim_time` and `clock` follow `rosbag`. Enable
+`bearing_error` to log CSV.
 
 See [the rosbag workflow](evolo_bearing/docs/rosbag_workflows.md) and
 [the yaw-correction experiment](evolo_bearing/docs/yaw_correction_experiment.md).

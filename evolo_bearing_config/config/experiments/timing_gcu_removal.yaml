@@ -53,7 +53,7 @@ holy:
 
     replay_rate: 1.0
     start_offset: 0.0
-    # Absolute bag time in seconds; null plays to the end.
+    # Seconds from bag start (> start_offset); null plays to the end.
     stop_time: null
 
 
@@ -76,7 +76,7 @@ holy:
 corrected_camera_tf_node:
   ros__parameters:
     # absolute or shape
-    yaw_correction_mode: absolute
+    yaw_correction_mode: shape
     negate_yaw_correction: false
 
 
@@ -110,8 +110,6 @@ bearing_ray_ids_node:
 bearing_error_node:
   ros__parameters:
 
-    bearing_topic: /evolo/gimbal_camera/target_bearing_marker
-
     # Empty = no selected-track filtering.
     bearing_track_id: ""
 
@@ -137,9 +135,6 @@ bearing_error_node:
     # ------------------------------------------------------------
     # Correction metadata
     # ------------------------------------------------------------
-
-    yaw_correction_mode: shape
-    negate_yaw_correction: false
 
     gimbal_gcu_feedback_topic: /evolo/gimbal_camera/gimbal_gcu_fb
 

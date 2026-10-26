@@ -9,6 +9,11 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     params_file = LaunchConfiguration("params_file")
+    # Before params_file, so a key in the node's own YAML section overrides it.
+    derived = {
+        "world_frame": LaunchConfiguration("world_frame"),
+        "use_sim_time": LaunchConfiguration("use_sim_time"),
+    }
 
     return LaunchDescription(
         [
@@ -16,6 +21,8 @@ def generate_launch_description():
                 "params_file",
                 description="ROS parameter YAML.",
             ),
+            DeclareLaunchArgument("world_frame", default_value="evolo/map"),
+            DeclareLaunchArgument("use_sim_time", default_value="false"),
             DeclareLaunchArgument(
                 "start_fixed_marker",
                 default_value="true",
@@ -36,7 +43,7 @@ def generate_launch_description():
                 condition=IfCondition(
                     LaunchConfiguration("start_fixed_marker")
                 ),
-                parameters=[params_file],
+                parameters=[derived, params_file],
             ),
             Node(
                 package="evolo_reference_markers",
@@ -46,7 +53,7 @@ def generate_launch_description():
                 condition=IfCondition(
                     LaunchConfiguration("start_smarcduino_marker")
                 ),
-                parameters=[params_file],
+                parameters=[derived, params_file],
             ),
             Node(
                 package="evolo_reference_markers",
@@ -56,7 +63,7 @@ def generate_launch_description():
                 condition=IfCondition(
                     LaunchConfiguration("start_waraps_marker")
                 ),
-                parameters=[params_file],
+                parameters=[derived, params_file],
             ),
         ]
     )

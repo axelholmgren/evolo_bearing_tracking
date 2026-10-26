@@ -53,7 +53,7 @@ holy:
 
     replay_rate: 3.0
     start_offset: 0.0
-    # Absolute bag time in seconds; null plays to the end.
+    # Seconds from bag start (> start_offset); null plays to the end.
     stop_time: null
 
 
@@ -112,8 +112,6 @@ bearing_ray_ids_node:
 bearing_error_node:
   ros__parameters:
 
-    bearing_topic: /evolo/gimbal_camera/target_bearing_marker
-
     # Empty = no selected-track filtering.
     bearing_track_id: ""
 
@@ -125,7 +123,7 @@ bearing_error_node:
     # Marker truth
     # ------------------------------------------------------------
 
-    truth_topic: /fixed_position_marker
+    # Default: topic of the one enabled marker.
 
 
     # ------------------------------------------------------------
@@ -139,10 +137,6 @@ bearing_error_node:
     # ------------------------------------------------------------
     # Correction metadata
     # ------------------------------------------------------------
-
-    yaw_correction_mode: absolute
-    negate_yaw_correction: true
-    extend_yaw_correction: true
 
     gimbal_gcu_feedback_topic: /evolo/gimbal_camera/gimbal_gcu_fb
 
@@ -175,7 +169,6 @@ fixed_position_marker_node:
     altitude: 0.0
 
     marker_topic: /fixed_position_marker
-    world_frame: evolo/odom
 
 
 # ================================================================
